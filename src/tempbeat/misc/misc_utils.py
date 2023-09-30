@@ -108,13 +108,64 @@ def top_k(
     return np.array(a)[argtop_k(a, k=k, **kwargs)]
 
 
-def get_camel_case(s, first_upper=False):
-    # https://www.w3resource.com/python-exercises/string/python-data-type-string-exercise-96.php
+def get_camel_case(s: str, first_upper: bool = False) -> str:
+    """
+    Convert a string to camelCase.
+
+    This function takes a string and converts it to camelCase. It removes underscores and hyphens,
+    and capitalizes the first letter of each word except for the first word if `first_upper` is set
+    to False.
+
+    Parameters
+    ----------
+    s : str
+        The input string.
+    first_upper : bool, optional
+        Whether to capitalize the first letter of the resulting camelCase string. Default is False.
+
+    Returns
+    -------
+    str
+        The camelCase string.
+
+    References
+    ----------
+    https://www.w3resource.com/python-exercises/string/python-data-type-string-exercise-96.php
+
+    Examples
+    --------
+    >>> get_camel_case("hello_world")
+    'helloWorld'
+
+    >>> get_camel_case("hello_world", first_upper=True)
+    'HelloWorld'
+    """
     s = re.sub(r"(_|-)+", " ", s).title().replace(" ", "")
     if first_upper:
         return s
     return "".join([s[0].lower(), s[1:]])
 
 
-def get_snake_case(s):
+def get_snake_case(s: str) -> str:
+    """
+    Convert a string to snake_case.
+
+    This function takes a string and converts it to snake_case by inserting underscores
+    before capital letters (except for the first letter).
+
+    Parameters
+    ----------
+    s : str
+        The input string.
+
+    Returns
+    -------
+    str
+        The snake_case string.
+
+    Examples
+    --------
+    >>> get_snake_case("helloWorld")
+    'hello_world'
+    """
     return re.sub(r"(?<!^)(?=[A-Z])", "_", s).lower()

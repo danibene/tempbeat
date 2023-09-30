@@ -1,6 +1,12 @@
 import numpy as np
 
-from tempbeat.misc.misc_utils import argtop_k, get_func_kwargs, top_k
+from tempbeat.misc.misc_utils import (
+    argtop_k,
+    get_camel_case,
+    get_func_kwargs,
+    get_snake_case,
+    top_k,
+)
 
 
 class TestGetFuncKwargs:
@@ -170,3 +176,45 @@ class TestTopK:
         result = top_k(a, k=3)
         expected = np.array([])
         np.testing.assert_array_equal(result, expected)
+
+
+class TestGetCamelCase:
+    """
+    Test cases for the get_camel_case function.
+    """
+
+    @staticmethod
+    def test_get_camel_case_basic() -> None:
+        """
+        Test get_camel_case with a basic example.
+
+        The function should correctly convert a string to camelCase.
+        """
+        result = get_camel_case("hello_world")
+        assert result == "helloWorld"
+
+    @staticmethod
+    def test_get_camel_case_first_upper() -> None:
+        """
+        Test get_camel_case with first_upper set to True.
+
+        The function should capitalize the first letter of the camelCase string.
+        """
+        result = get_camel_case("hello_world", first_upper=True)
+        assert result == "HelloWorld"
+
+
+class TestGetSnakeCase:
+    """
+    Test cases for the get_snake_case function.
+    """
+
+    @staticmethod
+    def test_get_snake_case_basic() -> None:
+        """
+        Test get_snake_case with a basic example.
+
+        The function should correctly convert a string to snake_case.
+        """
+        result = get_snake_case("helloWorld")
+        assert result == "hello_world"

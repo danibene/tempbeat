@@ -1,17 +1,43 @@
 import inspect
 import re
+from typing import Any, Callable, Dict, List
 
 import numpy as np
 
 
-def get_func_kwargs(func, exclude_keys=[], **kwargs):
-    # https://stackoverflow.com/questions/61805344/recursive-function-with-kwargs
+def get_func_kwargs(
+    func: Callable, exclude_keys: List[str] = [], **kwargs
+) -> Dict[str, Any]:
+    """
+    Get keyword arguments relevant to a function.
+
+    This function extracts keyword arguments that are relevant to the specified function. It uses
+    the function's signature to identify valid keyword arguments.
+
+    Parameters
+    ----------
+    func : Callable
+        The target function.
+    exclude_keys : List[str], optional
+        List of keys to exclude from the extracted keyword arguments.
+    **kwargs
+        Additional keyword arguments.
+
+    Returns
+    -------
+    Dict[str, Any]
+        Dictionary containing keyword arguments relevant to the function.
+    """
+    # Retrieve the parameters of the target function
     func_args = list(inspect.signature(func).parameters)
+
+    # Filter and extract keyword arguments
     func_kwargs = {
         k: kwargs.pop(k)
         for k in dict(kwargs)
         if k in func_args and k not in exclude_keys
     }
+
     return func_kwargs
 
 

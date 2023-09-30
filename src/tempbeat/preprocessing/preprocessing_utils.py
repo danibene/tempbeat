@@ -1,7 +1,8 @@
-from typing import Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 from warnings import warn
 
 import numpy as np
+import scipy.stats
 from neurokit2.hrv.intervals_utils import _intervals_successive
 
 
@@ -214,3 +215,109 @@ def timestamp_to_samp(
         samp[less_than_zero] = 0
 
     return samp
+
+
+def check_uniform_sig_time(
+    sig_time: Union[np.ndarray, list], decimals: int = 6
+) -> bool:
+    """
+    Check if the difference between timepoints in a signal time array is uniform.
+
+    This function checks if the difference between consecutive timepoints in a signal time array
+    is uniform up to a specified number of decimals.
+
+    Parameters
+    ----------
+    sig_time : Union[np.ndarray, list]
+        Array of timestamps corresponding to each sample.
+    decimals : int, optional
+        Number of decimal places to consider when checking uniformity. Default is 6.
+
+    Returns
+    -------
+    bool
+        True if the difference between timepoints is uniform, False otherwise.
+    """
+    return len(np.unique(np.round(np.diff(sig_time), decimals=decimals))) == 1
+
+
+def sig_time_to_sampling_rate(
+    sig_time: Union[np.ndarray, List[float]],
+    method: str = "median",
+    check_uniform: bool = True,
+    decimals: int = 12,
+) -> int:
+    """
+    Convert signal time array to sampling rate.
+
+    This function calculates the sampling rate based on the provided signal time array using
+    either the median or mode method.
+
+    Parameters
+    ----------
+    sig_time : Union[np.ndarray, List[float]]
+        Array of timestamps corresponding to each sample.
+    method : str, optional
+        Method to use for calculating the sampling rate. Either "median" (default) or "mode".
+    check_uniform : bool, optional
+        Whether to check if the difference between timepoints is uniform. Default is True.
+    decimals : int, optional
+        Number of decimal places to consider when checking uniformity. Default is 12.
+
+    Returns
+    -------
+    int
+        Calculated sampling rate.
+
+    Warnings
+    --------
+    - If `check_uniform` is True and the difference between timepoints is not uniform, a warning
+      is issued.
+
+    Examples
+    --------
+    >>> sig_time_to_sampling_rate(np.array([0, 1, 2, 3, 4]))
+    1
+
+    >>> sig_time_to_sampling_rate(np.array([0, 0.5, 1.0, 1.5]), method="mode")
+    2
+    """
+    if check_uniform:
+        if not check_uniform_sig_time(sig_time, decimals=decimals):
+            warn("Warning: the difference between timepoints is not uniform")
+
+    if method == "mode":
+        sampling_rate = int(1 / scipy.stats.mode(np.diff(sig_time)).mode)
+    else:
+        sampling_rate = int(1 / np.median(np.diff(sig_time)))
+
+    return sampling_rate
+
+
+def sampling_rate_to_sig_time(
+    sig: Union[np.ndarray, List[float]],
+    sampling_rate: int = 1000,
+    start_time: float = 0,
+) -> np.ndarray:
+    """
+    Convert sampling rate to signal time array.
+
+    This function generates an array of timestamps corresponding to each sample based on the
+    provided sampling rate and start time.
+
+    Parameters
+    ----------
+    sig : Union[np.ndarray, List[float]]
+        Input signal.
+    sampling_rate : int, optional
+        The sampling rate of the signal, in Hz. Default is 1000 Hz.
+    start_time : float, optional
+        Start time of the signal in seconds. Default is 0.
+
+    Returns
+    -------
+    np.ndarray
+        Array of timestamps corresponding to each sample.
+    """
+    sig_time = (np.arange(0, len(sig)) / sampling_rate) + start_time
+    return sig_time

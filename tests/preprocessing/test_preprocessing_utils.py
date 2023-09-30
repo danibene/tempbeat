@@ -1,9 +1,12 @@
 import numpy as np
 
 from tempbeat.preprocessing.preprocessing_utils import (
+    check_uniform_sig_time,
     peak_time_to_rri,
     rri_to_peak_time,
     samp_to_timestamp,
+    sampling_rate_to_sig_time,
+    sig_time_to_sampling_rate,
     timestamp_to_samp,
 )
 
@@ -193,4 +196,148 @@ class TestTimestampToSamp:
         timestamp = np.array([0.0, 0.2, 0.4])
         result = timestamp_to_samp(timestamp, sig_time=sig_time)
         expected = np.array([0, 2, 4])
+        np.testing.assert_array_equal(result, expected)
+
+
+class TestCheckUniformSigTime:
+    """
+    Test cases for the check_uniform_sig_time function.
+    """
+
+    @staticmethod
+    def test_check_uniform_sig_time_uniform() -> None:
+        """
+        Test check_uniform_sig_time with uniform timepoints.
+
+        The function should return True when the difference between timepoints is uniform.
+        """
+        sig_time = np.array([0, 1, 2, 3, 4])
+        result = check_uniform_sig_time(sig_time)
+        assert result is True
+
+    @staticmethod
+    def test_check_uniform_sig_time_non_uniform() -> None:
+        """
+        Test check_uniform_sig_time with non-uniform timepoints.
+
+        The function should return False when the difference between timepoints is not uniform.
+        """
+        sig_time = np.array([0, 0.5, 0.99, 1.5])
+        result = check_uniform_sig_time(sig_time)
+        assert result is False
+
+
+class TestSigTimeToSamplingRate:
+    """
+    Test cases for the sig_time_to_sampling_rate function.
+    """
+
+    @staticmethod
+    def test_sig_time_to_sampling_rate_median() -> None:
+        """
+        Test sig_time_to_sampling_rate with the median method.
+
+        The function should correctly calculate the sampling rate using the median method.
+        """
+        sig_time = np.array([0, 1, 2, 3, 4])
+        result = sig_time_to_sampling_rate(sig_time)
+        expected = 1
+        assert result == expected
+
+    @staticmethod
+    def test_sig_time_to_sampling_rate_mode() -> None:
+        """
+        Test sig_time_to_sampling_rate with the mode method.
+
+        The function should correctly calculate the sampling rate using the mode method.
+        """
+        sig_time = np.array([0, 0.5, 1.0, 1.5])
+        result = sig_time_to_sampling_rate(sig_time, method="mode")
+        expected = 2
+        assert result == expected
+
+    @staticmethod
+    def test_sig_time_to_sampling_rate_check_uniform(recwarn) -> None:
+        """
+        Test sig_time_to_sampling_rate with check_uniform=True.
+
+        The function should correctly calculate the sampling rate with check_uniform=True.
+        """
+        sig_time = np.array([0, 0.5, 1.0, 1.3, 1.5])
+        result = sig_time_to_sampling_rate(sig_time, check_uniform=True)
+        expected = 2
+        assert result == expected
+        # assert that warning is issued
+        assert len(recwarn) == 1
+
+    @staticmethod
+    def test_sig_time_to_sampling_rate_check_uniform_false(recwarn) -> None:
+        """
+        Test sig_time_to_sampling_rate with check_uniform=False.
+
+        The function should correctly calculate the sampling rate with check_uniform=False.
+        """
+        sig_time = np.array([0, 0.5, 1.0, 1.3, 1.5])
+        result = sig_time_to_sampling_rate(sig_time, check_uniform=False)
+        expected = 2
+        assert result == expected
+        # assert that warning is not issued
+        assert len(recwarn) == 0
+
+    @staticmethod
+    def test_sig_time_to_sampling_rate_check_uniform_decimals2(recwarn) -> None:
+        """
+        Test sig_time_to_sampling_rate with check_uniform=True and decimals=2.
+
+        The function should correctly calculate the sampling rate with check_uniform=True and decimals=1.
+        """
+        sig_time = np.array([0, 0.5, 1.0, 1.5001, 2.0])
+        result = sig_time_to_sampling_rate(sig_time, check_uniform=True, decimals=2)
+        expected = 2
+        assert result == expected
+        # assert that warning is not issued
+        assert len(recwarn) == 0
+
+    @staticmethod
+    def test_sig_time_to_sampling_rate_check_uniform_decimals5(recwarn) -> None:
+        """
+        Test sig_time_to_sampling_rate with check_uniform=True and decimals=5.
+
+        The function should correctly calculate the sampling rate with check_uniform=True and decimals=5.
+        """
+        sig_time = np.array([0, 0.5, 1.0, 1.5001, 2.0])
+        result = sig_time_to_sampling_rate(sig_time, check_uniform=True, decimals=5)
+        expected = 2
+        assert result == expected
+        # assert that warning is issued
+        assert len(recwarn) == 1
+
+
+class TestSamplingRateToSigTime:
+    """
+    Test cases for the sampling_rate_to_sig_time function.
+    """
+
+    @staticmethod
+    def test_sampling_rate_to_sig_time_basic() -> None:
+        """
+        Test sampling_rate_to_sig_time with a basic example.
+
+        The function should correctly generate an array of timestamps corresponding to each sample.
+        """
+        sig = np.array([1, 2, 3])
+        result = sampling_rate_to_sig_time(sig, sampling_rate=1000, start_time=0)
+        expected = np.array([0.0, 0.001, 0.002])
+        np.testing.assert_array_equal(result, expected)
+
+    @staticmethod
+    def test_sampling_rate_to_sig_time_start_time1() -> None:
+        """
+        Test sampling_rate_to_sig_time with a start_time of 1.
+
+        The function should correctly generate an array of timestamps corresponding to each sample with start_time.
+        """
+        sig = np.array([1, 2, 3])
+        result = sampling_rate_to_sig_time(sig, sampling_rate=1000, start_time=1)
+        expected = np.array([1.0, 1.001, 1.002])
         np.testing.assert_array_equal(result, expected)

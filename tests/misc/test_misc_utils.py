@@ -1,6 +1,6 @@
 import numpy as np
 
-from tempbeat.misc.misc_utils import argtop_k, get_func_kwargs
+from tempbeat.misc.misc_utils import argtop_k, get_func_kwargs, top_k
 
 
 class TestGetFuncKwargs:
@@ -77,7 +77,8 @@ class TestGetFuncKwargs:
 
 
 class TestArgTopK:
-    def test_argtop_k_with_array(self) -> None:
+    @staticmethod
+    def test_argtop_k_with_array() -> None:
         """
         Test argtop_k with a numpy array.
         """
@@ -86,7 +87,8 @@ class TestArgTopK:
         expected = np.array([5, 7])
         np.testing.assert_array_equal(result, expected)
 
-    def test_argtop_k_with_list(self) -> None:
+    @staticmethod
+    def test_argtop_k_with_list() -> None:
         """
         Test argtop_k with a Python list.
         """
@@ -95,7 +97,8 @@ class TestArgTopK:
         expected = np.array([5, 7])
         np.testing.assert_array_equal(result, expected)
 
-    def test_argtop_k_k_greater_than_length(self) -> None:
+    @staticmethod
+    def test_argtop_k_k_greater_than_length() -> None:
         """
         Test argtop_k with k greater than the length of the array.
         """
@@ -104,11 +107,66 @@ class TestArgTopK:
         expected = np.array([5, 7, 10, 8, 4, 2, 9, 0, 6, 3, 1])
         np.testing.assert_array_equal(result, expected)
 
-    def test_argtop_k_empty_array(self) -> None:
+    @staticmethod
+    def test_argtop_k_empty_array() -> None:
         """
         Test argtop_k with an empty array.
         """
         a = np.array([])
         result = argtop_k(a, k=3)
+        expected = np.array([])
+        np.testing.assert_array_equal(result, expected)
+
+
+class TestTopK:
+    """
+    Test cases for the top_k function.
+    """
+
+    @staticmethod
+    def test_top_k_with_array() -> None:
+        """
+        Test top_k with a numpy array.
+
+        The function should correctly return the top k elements from the input array.
+        """
+        a = np.array([3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5])
+        result = top_k(a, k=3)
+        expected = np.array([9, 6, 5])
+        np.testing.assert_array_equal(result, expected)
+
+    @staticmethod
+    def test_top_k_with_list() -> None:
+        """
+        Test top_k with a Python list.
+
+        The function should correctly return the top k elements from the input list.
+        """
+        a = [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5]
+        result = top_k(a, k=3)
+        expected = [9, 6, 5]
+        np.testing.assert_array_equal(result, expected)
+
+    @staticmethod
+    def test_top_k_k_greater_than_length() -> None:
+        """
+        Test top_k with k greater than the length of the array.
+
+        The function should return all elements if k is greater than the length.
+        """
+        a = [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5]
+        result = top_k(a, k=20)
+        expected = [9, 6, 5, 5, 5, 4, 3, 3, 2, 1, 1]
+        np.testing.assert_array_equal(result, expected)
+
+    @staticmethod
+    def test_top_k_empty_array() -> None:
+        """
+        Test top_k with an empty array.
+
+        The function should return an empty array.
+        """
+        a = np.array([])
+        result = top_k(a, k=3)
         expected = np.array([])
         np.testing.assert_array_equal(result, expected)

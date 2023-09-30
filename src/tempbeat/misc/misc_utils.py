@@ -65,16 +65,6 @@ def argtop_k(a: Union[List[Any], np.ndarray], k: int = 1, **kwargs) -> np.ndarra
     Notes
     -----
     See https://github.com/numpy/numpy/issues/15128
-
-    Examples
-    --------
-    >>> a = [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5]
-    >>> argtop_k(a, k=3)
-    array([5, 4, 8])
-
-    >>> b = np.array([3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5])
-    >>> argtop_k(b, k=3)
-    array([5, 4, 8])
     """
     if type(a) is list:
         a = np.array(a)
@@ -85,9 +75,37 @@ def argtop_k(a: Union[List[Any], np.ndarray], k: int = 1, **kwargs) -> np.ndarra
     return a.argsort()[-k:][::-1]
 
 
-def top_k(a, k=1, **kwargs):
-    # See https://github.com/numpy/numpy/issues/15128
-    return a[argtop_k(a, k=k, **kwargs)]
+def top_k(
+    a: Union[List[Any], np.ndarray], k: int = 1, **kwargs
+) -> Union[List[Any], np.ndarray]:
+    """
+    Return the top k elements from the input array.
+
+    Parameters
+    ----------
+    a : Union[List[Any], np.ndarray]
+        The input array or list.
+    k : int, optional
+        The number of top elements to return. Default is 1.
+    **kwargs
+        Additional keyword arguments to be passed to the argtop_k function.
+
+    Returns
+    -------
+    Union[List[Any], np.ndarray]
+        An array or list containing the top k elements from the input array.
+
+    Notes
+    -----
+    See https://github.com/numpy/numpy/issues/15128
+
+    Examples
+    --------
+    >>> a = [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5]
+    >>> top_k(a, k=2)
+    [9, 6]
+    """
+    return np.array(a)[argtop_k(a, k=k, **kwargs)]
 
 
 def get_camel_case(s, first_upper=False):

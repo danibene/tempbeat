@@ -7,9 +7,6 @@
     .. image:: https://readthedocs.org/projects/tempbeat/badge/?version=latest
         :alt: ReadTheDocs
         :target: https://tempbeat.readthedocs.io/en/stable/
-    .. image:: https://img.shields.io/coveralls/github/<USER>/tempbeat/main.svg
-        :alt: Coveralls
-        :target: https://coveralls.io/r/<USER>/tempbeat
     .. image:: https://img.shields.io/pypi/v/tempbeat.svg
         :alt: PyPI-Server
         :target: https://pypi.org/project/tempbeat/
@@ -23,6 +20,9 @@
         :alt: Twitter
         :target: https://twitter.com/tempbeat
 
+.. image:: https://img.shields.io/coveralls/github/danibene/tempbeat/main.svg
+    :alt: Coveralls
+    :target: https://coveralls.io/r/danibene/tempbeat
 .. image:: https://img.shields.io/badge/-PyScaffold-005CA0?logo=pyscaffold
     :alt: Project generated with PyScaffold
     :target: https://pyscaffold.org/

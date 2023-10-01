@@ -479,3 +479,48 @@ def interpolate_nonuniform(
         x_values=sig_time, y_values=sig, x_new=new_sig_time, method=method
     )
     return new_sig, new_sig_time
+
+
+def get_local_hb_sig(
+    peak: float,
+    sig: np.ndarray,
+    sig_time: Optional[np.ndarray] = None,
+    sampling_rate: int = 1000,
+    time_before_peak: float = 0.2,
+    time_after_peak: float = 0.2,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Get a local heartbeat signal around a peak.
+
+    Parameters
+    ----------
+    peak : float
+        The timestamp of the peak around which the local signal is extracted.
+    sig : np.ndarray
+        The signal.
+    sig_time : np.ndarray, optional
+        The timestamps corresponding to the signal samples. If None, it is assumed
+        that the samples are uniformly spaced.
+    sampling_rate : int, optional
+        The sampling rate of the signal (in Hz, i.e., samples per second).
+    time_before_peak : float, optional
+        The duration of the signal to include before the peak (in seconds).
+    time_after_peak : float, optional
+        The duration of the signal to include after the peak (in seconds).
+
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray]
+        A tuple containing the local signal (`hb_sig`) and its corresponding timestamps (`hb_sig_time`).
+    """
+    if sig_time is None:
+        # Assuming uniform spacing if timestamps are not provided
+        sig_time = np.arange(0, len(sig)) / sampling_rate
+
+    hb_sig_indices = np.where(
+        (sig_time > peak - time_before_peak) & (sig_time < peak + time_after_peak)
+    )
+    hb_sig = sig[hb_sig_indices]
+    hb_sig_time = sig_time[hb_sig_indices]
+
+    return hb_sig, hb_sig_time

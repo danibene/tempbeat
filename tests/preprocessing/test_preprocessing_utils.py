@@ -3,6 +3,7 @@ from neurokit2 import signal_power, signal_simulate
 
 from tempbeat.preprocessing.preprocessing_utils import (
     check_uniform_sig_time,
+    get_local_hb_sig,
     interpolate_nonuniform,
     peak_time_to_rri,
     resample_nonuniform,
@@ -516,3 +517,31 @@ class TestResampleNonuniform:
         self.check_correctly_resampled(
             sig, sig_time, new_sig, new_sig_time, new_sampling_rate=new_sampling_rate
         )
+
+
+class TestGetLocalHbSig:
+    """
+    Test cases for the get_local_hb_sig function.
+    """
+
+    @staticmethod
+    def test_get_local_hb_sig_basic() -> None:
+        """
+        Test get_local_hb_sig with a basic example.
+
+        The function should correctly return the local heartbeat signal.
+        """
+        peak = 1.5
+        sig = np.array([1, 2, 3, 4, 3, 2, 1])
+        sig_time = np.array([0, 0.5, 1, 1.5, 2, 2.5, 3])
+        time_before_peak = 0.6
+        time_after_peak = 0.6
+        hb_sig, hb_sig_time = get_local_hb_sig(
+            peak,
+            sig,
+            sig_time=sig_time,
+            time_before_peak=time_before_peak,
+            time_after_peak=time_after_peak,
+        )
+        np.testing.assert_array_equal(hb_sig, np.array([3, 4, 3]))
+        np.testing.assert_array_equal(hb_sig_time, np.array([1, 1.5, 2]))

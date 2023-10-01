@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 from neurokit2 import signal_power, signal_simulate
 
@@ -403,13 +405,13 @@ class TestResampleNonuniform:
     """
 
     @staticmethod
-    def get_test_signal_uniform() -> tuple[np.ndarray, np.ndarray]:
+    def get_test_signal_uniform() -> Tuple[np.ndarray, np.ndarray]:
         """
         Get a test signal with uniform timepoints.
 
         Returns
         -------
-        tuple[np.ndarray, np.ndarray]
+        Tuple[np.ndarray, np.ndarray]
             A tuple containing the signal and the corresponding timepoints.
         """
         duration = 10
@@ -434,13 +436,13 @@ class TestResampleNonuniform:
         sig_time = sampling_rate_to_sig_time(sig, sampling_rate=sampling_rate)
         return sig, sig_time
 
-    def get_test_signal_nonuniform(self) -> tuple[np.ndarray, np.ndarray]:
+    def get_test_signal_nonuniform(self) -> Tuple[np.ndarray, np.ndarray]:
         """
         Get a test signal with non-uniform timepoints.
 
         Returns
         -------
-        tuple[np.ndarray, np.ndarray]
+        Tuple[np.ndarray, np.ndarray]
             A tuple containing the signal and the corresponding timepoints.
         """
         sig, sig_time = self.get_test_signal_uniform()

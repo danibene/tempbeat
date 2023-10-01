@@ -330,7 +330,7 @@ def resample_nonuniform(
     new_sampling_rate: int = 1000,
     interpolate_method: str = "linear",
     use_matlab: bool = False,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Resample a non-uniformly sampled signal to a new sampling rate.
 
@@ -349,7 +349,7 @@ def resample_nonuniform(
 
     Returns
     -------
-    tuple[np.ndarray, np.ndarray]
+    Tuple[np.ndarray, np.ndarray]
         Tuple containing the resampled signal and corresponding timestamps.
 
     Notes
@@ -367,7 +367,7 @@ def _resample_matlab(
     sig: Union[np.ndarray, list],
     sig_time: Union[np.ndarray, list],
     new_sampling_rate: int,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Resample using MATLAB.
 
@@ -382,7 +382,7 @@ def _resample_matlab(
 
     Returns
     -------
-    tuple[np.ndarray, np.ndarray]
+    Tuple[np.ndarray, np.ndarray]
         Tuple containing the resampled signal and corresponding timestamps.
     """
     try:
@@ -409,7 +409,7 @@ def _resample_scipy(
     sig_time: Union[np.ndarray, list],
     new_sampling_rate: int,
     interpolate_method: str,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Resample using scipy.
 
@@ -426,7 +426,7 @@ def _resample_scipy(
 
     Returns
     -------
-    tuple[np.ndarray, np.ndarray]
+    Tuple[np.ndarray, np.ndarray]
         Tuple containing the resampled signal and corresponding timestamps.
     """
     sampling_rate_interpl = sig_time_to_sampling_rate(
@@ -452,7 +452,7 @@ def interpolate_nonuniform(
     sig_time: Union[np.ndarray, list],
     sampling_rate: int,
     method: str,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Interpolate a non-uniformly sampled signal.
 
@@ -469,7 +469,7 @@ def interpolate_nonuniform(
 
     Returns
     -------
-    tuple[np.ndarray, np.ndarray]
+    Tuple[np.ndarray, np.ndarray]
         Tuple containing the interpolated signal and corresponding timestamps.
     """
     start_sample_new = np.floor(sampling_rate * sig_time[0])

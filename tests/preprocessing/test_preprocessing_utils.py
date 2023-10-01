@@ -1,6 +1,7 @@
 from typing import Tuple
 
 import numpy as np
+import pytest
 from neurokit2 import ecg_process, ecg_simulate, signal_power, signal_simulate
 
 from tempbeat.preprocessing.preprocessing_utils import (
@@ -8,6 +9,7 @@ from tempbeat.preprocessing.preprocessing_utils import (
     find_local_hb_peaks,
     get_local_hb_sig,
     interpolate_nonuniform,
+    norm_corr,
     peak_time_to_rri,
     resample_nonuniform,
     rri_to_peak_time,
@@ -587,3 +589,34 @@ class TestFindLocalHbPeaks:
         assert (
             mean_diff_local_hb_peaks_time_original < mean_diff_noisy_peak_time_original
         )
+
+
+class TestNormCorr:
+    @pytest.fixture
+    def sample_data(self):
+        arr_a = np.array([1, 2, 3, 4, 5])
+        arr_b = np.array([2, 3, 4, 5, 6])
+        return arr_a, arr_b
+
+    def test_norm_corr_equal_length(self, sample_data):
+        arr_a, arr_b = sample_data
+        result = norm_corr(arr_a, arr_b)
+        expected_result = 1
+        np.testing.assert_allclose(result, expected_result, rtol=1e-6)
+
+    def test_norm_corr_with_maxlags(self, sample_data):
+        arr_a, arr_b = sample_data
+        result = np.max(norm_corr(arr_a, arr_b, maxlags=2))
+        expected_result = 1
+        np.testing.assert_allclose(result, expected_result, rtol=1e-6)
+
+    def test_norm_corr_unequal_length(self):
+        arr_a = np.array([1, 2, 3, 4, 5])
+        arr_c = np.array([1, 2, 3])
+        with pytest.raises(ValueError):
+            norm_corr(arr_a, arr_c)
+
+    def test_norm_corr_invalid_maxlags(self, sample_data):
+        arr_a, arr_b = sample_data
+        with pytest.raises(ValueError):
+            norm_corr(arr_a, arr_b, maxlags=10)

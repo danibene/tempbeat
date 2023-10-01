@@ -638,3 +638,44 @@ def find_local_hb_peaks(
 
     new_peak_time = np.array(new_peak_time)
     return new_peak_time
+
+
+def norm_corr(a: np.ndarray, b: np.ndarray, maxlags: int = 0) -> np.ndarray:
+    """
+    Calculate normalized cross-correlation between two 1-dimensional arrays.
+
+    Parameters
+    ----------
+    a : np.ndarray
+        First array.
+    b : np.ndarray
+        Second array.
+    maxlags : int, optional
+        Maximum lag to calculate. Default is 0.
+
+    Returns
+    -------
+    np.ndarray
+        Array containing the normalized cross-correlation.
+
+    References
+    ----------
+    https://stackoverflow.com/questions/53436231/normalized-cross-correlation-in-python
+    """
+    Nx = len(a)
+
+    if Nx != len(b):
+        raise ValueError("a and b must be equal length")
+
+    if maxlags is None:
+        maxlags = Nx - 1
+
+    if maxlags >= Nx or maxlags < 0:
+        raise ValueError("maxlags must be None or strictly positive < %d" % Nx)
+
+    a = (a - np.mean(a)) / (np.std(a) * len(a))
+    b = (b - np.mean(b)) / (np.std(b))
+    c = np.correlate(a, b, "full")
+    c = c[Nx - 1 - maxlags : Nx + maxlags]
+
+    return c

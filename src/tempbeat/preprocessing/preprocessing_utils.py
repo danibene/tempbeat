@@ -4,6 +4,7 @@ from warnings import warn
 import numpy as np
 import scipy.stats
 from neurokit2.hrv.intervals_utils import _intervals_successive
+from neurokit2.signal import signal_interpolate
 
 
 def peak_time_to_rri(
@@ -321,3 +322,160 @@ def sampling_rate_to_sig_time(
     """
     sig_time = (np.arange(0, len(sig)) / sampling_rate) + start_time
     return sig_time
+
+
+def resample_nonuniform(
+    sig: Union[np.ndarray, list],
+    sig_time: Union[np.ndarray, list],
+    new_sampling_rate: int = 1000,
+    interpolate_method: str = "linear",
+    use_matlab: bool = False,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Resample a non-uniformly sampled signal to a new sampling rate.
+
+    Parameters
+    ----------
+    sig : Union[np.ndarray, list]
+        Input signal.
+    sig_time : Union[np.ndarray, list]
+        Array of timestamps corresponding to each sample.
+    new_sampling_rate : int, optional
+        The desired new sampling rate. Default is 1000 Hz.
+    interpolate_method : str, optional
+        Interpolation method for non-uniformly sampled signal. Default is "linear".
+    use_matlab : bool, optional
+        Whether to use MATLAB for resampling. Default is False.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        Tuple containing the resampled signal and corresponding timestamps.
+
+    Notes
+    -----
+    If `use_matlab` is True, the function uses MATLAB for resampling. Otherwise, it uses
+    scipy's resample function.
+    """
+    if use_matlab:
+        return _resample_matlab(sig, sig_time, new_sampling_rate)
+    else:
+        return _resample_scipy(sig, sig_time, new_sampling_rate, interpolate_method)
+
+
+def _resample_matlab(
+    sig: Union[np.ndarray, list],
+    sig_time: Union[np.ndarray, list],
+    new_sampling_rate: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Resample using MATLAB.
+
+    Parameters
+    ----------
+    sig : Union[np.ndarray, list]
+        Input signal.
+    sig_time : Union[np.ndarray, list]
+        Array of timestamps corresponding to each sample.
+    new_sampling_rate : int
+        The desired new sampling rate.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        Tuple containing the resampled signal and corresponding timestamps.
+    """
+    try:
+        import matlab.engine
+    except ImportError:
+        raise ImportError(
+            "To use MATLAB for resampling, you must have MATLAB installed and the "
+            "matlab.engine package installed in Python."
+        )
+
+    eng = matlab.engine.start_matlab()
+    eng.workspace["x"] = matlab.double(np.vstack(sig).astype(dtype="float64"))
+    eng.workspace["tx"] = matlab.double(np.vstack(sig_time).astype(dtype="float64"))
+    eng.workspace["fs"] = matlab.double(new_sampling_rate)
+    y, ty = eng.eval("resample(x, tx, fs);", nargout=2)
+    new_sig = np.hstack(np.asarray(y))
+    new_sig_time = np.hstack(np.asarray(ty))
+    eng.quit()
+    return new_sig, new_sig_time
+
+
+def _resample_scipy(
+    sig: Union[np.ndarray, list],
+    sig_time: Union[np.ndarray, list],
+    new_sampling_rate: int,
+    interpolate_method: str,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Resample using scipy.
+
+    Parameters
+    ----------
+    sig : Union[np.ndarray, list]
+        Input signal.
+    sig_time : Union[np.ndarray, list]
+        Array of timestamps corresponding to each sample.
+    new_sampling_rate : int
+        The desired new sampling rate.
+    interpolate_method : str
+        Interpolation method for non-uniformly sampled signal.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        Tuple containing the resampled signal and corresponding timestamps.
+    """
+    sampling_rate_interpl = sig_time_to_sampling_rate(
+        sig_time, method="median", check_uniform=False
+    )
+    sig_interpl, sig_time_interpl = interpolate_nonuniform(
+        sig,
+        sig_time,
+        sampling_rate=sampling_rate_interpl,
+        method=interpolate_method,
+    )
+    new_n_samples = int(
+        np.round(len(sig_time_interpl) * (new_sampling_rate / sampling_rate_interpl))
+    )
+    new_sig, new_sig_time = scipy.signal.resample(
+        sig_interpl, new_n_samples, t=sig_time_interpl
+    )
+    return new_sig, new_sig_time
+
+
+def interpolate_nonuniform(
+    sig: Union[np.ndarray, list],
+    sig_time: Union[np.ndarray, list],
+    sampling_rate: int,
+    method: str,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Interpolate a non-uniformly sampled signal.
+
+    Parameters
+    ----------
+    sig : Union[np.ndarray, list]
+        Input signal.
+    sig_time : Union[np.ndarray, list]
+        Array of timestamps corresponding to each sample.
+    sampling_rate : int
+        The desired sampling rate.
+    method : str
+        Interpolation method.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        Tuple containing the interpolated signal and corresponding timestamps.
+    """
+    start_sample_new = np.floor(sampling_rate * sig_time[0])
+    end_sample_new = np.ceil(sampling_rate * sig_time[-1])
+    new_sig_time = np.arange(start_sample_new, end_sample_new + 1) / sampling_rate
+    new_sig = signal_interpolate(
+        x_values=sig_time, y_values=sig, x_new=new_sig_time, method=method
+    )
+    return new_sig, new_sig_time

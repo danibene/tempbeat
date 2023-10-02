@@ -122,7 +122,7 @@ def clean_and_resample_signal(
 
     Returns
     -------
-    tuple[np.ndarray, np.ndarray]
+    Tuple[np.ndarray, np.ndarray]
         Tuple containing the cleaned signal and corresponding time values after resampling.
     """
     # Clean the signal
@@ -201,7 +201,7 @@ def compute_rri_and_handle_anomalies_for_template(
     move_average_rri_window: int,
     min_bpm: int = 40,
     max_bpm: int = 200,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Compute R-R intervals (RRI) and handle anomalies.
 
@@ -222,7 +222,7 @@ def compute_rri_and_handle_anomalies_for_template(
 
     Returns
     -------
-    tuple[np.ndarray, np.ndarray]
+    Tuple[np.ndarray, np.ndarray]
         Tuple containing computed RRI and corresponding time values.
     """
     rri, rri_time = peak_time_to_rri(
@@ -321,7 +321,7 @@ def correlate_templates_with_signal(
     new_sampling_rate: int,
     temp_time_before_peak: float,
     temp_time_after_peak: float,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Correlate templates with the cleaned signal.
 
@@ -342,7 +342,7 @@ def correlate_templates_with_signal(
 
     Returns
     -------
-    tuple[np.ndarray, np.ndarray]
+    Tuple[np.ndarray, np.ndarray]
         Tuple containing correlation values and corresponding time values.
     """
     corrs = []

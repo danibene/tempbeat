@@ -41,10 +41,6 @@ def temp_hb_extract(
     fix_corr_peaks_by_height: bool = False,
     fix_interpl_peaks_by_height: bool = False,
     fix_added_interpl_peaks_by_height: bool = False,
-    relative_rri_min: float = -2.5,
-    relative_rri_max: float = 2.5,
-    absolute_diff_rri_min: float = -np.inf,
-    absolute_diff_rri_max: float = np.inf,
     corr_peak_extraction_method: str = "nk_ecg_process",
     k_nearest_intervals: int = None,
     n_nan_estimation_method: str = "floor",
@@ -99,14 +95,6 @@ def temp_hb_extract(
         Whether to fix interpolated peaks by height.
     fix_added_interpl_peaks_by_height : bool, optional
         Whether to fix added interpolated peaks by height.
-    relative_rri_min : float, optional
-        Minimum relative RRI.
-    relative_rri_max : float, optional
-        Maximum relative RRI.
-    absolute_diff_rri_min : float, optional
-        Minimum absolute difference in RRI.
-    absolute_diff_rri_max : float, optional
-        Maximum absolute difference in RRI.
     corr_peak_extraction_method : str, optional
         Peak extraction method used for correlation signal.
     k_nearest_intervals : int, optional
@@ -221,7 +209,7 @@ def temp_hb_extract(
     for peak in peak_time_for_temp_confident:
         # TODO: make the window length based on samples rather than times
         # so that there aren't rounding errors
-        hb_sig, hb_sig_time = get_local_hb_sig(
+        hb_sig, _ = get_local_hb_sig(
             peak=peak,
             sig=clean_sig_r,
             sig_time=clean_sig_time_r,
@@ -248,7 +236,7 @@ def temp_hb_extract(
     sig_time = clean_sig_time_r
     sampling_rate = new_sampling_rate
     for time in sig_time:
-        hb_sig, hb_sig_time = get_local_hb_sig(
+        hb_sig, _ = get_local_hb_sig(
             time,
             sig,
             sig_time=sig_time,
@@ -274,13 +262,11 @@ def temp_hb_extract(
             corrs, method="nabian2018", sampling_rate=sampling_rate
         )
     elif corr_peak_extraction_method == "nk_ecg_process_kalidas2017":
-        processed_signals, processed_info = nk.ecg_process(
+        _, processed_info = nk.ecg_process(
             corrs, sampling_rate=sampling_rate, method="kalidas2017"
         )
     else:
-        processed_signals, processed_info = nk.ecg_process(
-            corrs, sampling_rate=sampling_rate
-        )
+        _, processed_info = nk.ecg_process(corrs, sampling_rate=sampling_rate)
     peak_key = [key for key in list(processed_info.keys()) if "Peak" in key][0]
     ind = [processed_info[peak_key]][0].astype(int)
     peak_time_from_corr = corr_times[ind]
@@ -383,8 +369,6 @@ def temp_hb_extract(
         sampling_rate=sampling_rate,
         interval_min=np.nanmin(rri) / 1000,
         interval_max=np.nanmax(rri) / 1000,
-        # relative_interval_min=-2.5,
-        # relative_interval_max=2.5,
         robust=True,
         k_nearest_intervals=k_nearest_intervals,
         n_nan_estimation_method=n_nan_estimation_method,
@@ -440,9 +424,6 @@ def temp_hb_extract(
         return final_peak_time
     else:
         debug_out = {}
-        # debug_out["orig_sig"] = orig_sig
-        # debug_out["orig_sig_time"] = orig_sig_time
-        # debug_out["orig_sampling_rate"] = orig_sampling_rate
         debug_out["clean_sig_r"] = clean_sig_r
         debug_out["clean_sig_time_r"] = clean_sig_time_r
         debug_out["new_sampling_rate"] = new_sampling_rate

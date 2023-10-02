@@ -1,6 +1,8 @@
 import inspect
+import pathlib
 import re
 from typing import Any, Callable, Dict, List, Union
+from warnings import warn
 
 import numpy as np
 
@@ -169,3 +171,48 @@ def get_snake_case(s: str) -> str:
     'hello_world'
     """
     return re.sub(r"(?<!^)(?=[A-Z])", "_", s).lower()
+
+
+def write_dict_to_json(
+    d: Dict[str, Any],
+    json_path: str = "out.json",
+    fmt: str = "%s",
+    rewrite: bool = False,
+) -> None:
+    """
+    Write a dictionary to a JSON file.
+
+    Parameters
+    ----------
+    d : dict
+        The dictionary to be written to the JSON file.
+    json_path : str, optional
+        The path to the JSON file. Defaults to "out.json".
+    fmt : str, optional
+        The format string used for formatting the JSON file. Defaults to "%s".
+    rewrite : bool, optional
+        If True, rewrite the file even if it already exists. Defaults to False.
+
+    Raises
+    ------
+    ImportError
+        If the 'json_tricks' module is not installed.
+    """
+    try:
+        from json_tricks import dump
+    except ImportError:
+        raise ImportError(
+            "Error in write_dict_to_json(): the 'json_tricks' module is required"
+        )
+
+    # if parent path does not exist create it
+    pathlib.Path(json_path).resolve().parent.mkdir(parents=True, exist_ok=True)
+
+    if not pathlib.Path(json_path).suffix == ".json":
+        json_path = pathlib.Path(json_path + ".json")
+
+    if not pathlib.Path(json_path).is_file() or rewrite:
+        with open(str(json_path), "w") as json_file:
+            dump(d, json_file, allow_nan=True, fmt=fmt)
+    else:
+        warn("Warning: " + str(json_path) + " already exists.")

@@ -466,3 +466,116 @@ def find_anomalies(
     )
     f_sum[timestamp_to_samp(excluded_peak_time, sig_time=inter_f_time)] = 1
     return f_sum[timestamp_to_samp(peak_time, sig_time=inter_f_time)]
+
+
+def clean_hb_signal(
+    sig: np.ndarray, sampling_rate: int, clean_method: str, highcut: int
+) -> np.ndarray:
+    """
+    Clean the input signal using specified method.
+
+    Parameters
+    ----------
+    sig : np.ndarray
+        The input signal.
+    sampling_rate : int
+        The sampling rate of the signal.
+    clean_method : str
+        The method for cleaning the signal.
+    highcut : int
+        Highcut frequency for signal filtering.
+
+    Returns
+    -------
+    np.ndarray
+        The cleaned signal.
+    """
+
+    if clean_method == "own_filt":
+        clean_sig = nk.signal_filter(
+            sig,
+            sampling_rate=sampling_rate,
+            lowcut=0.5,
+            highcut=highcut,
+            method="butterworth",
+            order=2,
+        )
+    else:
+        clean_sig = nk.ecg_clean(sig, method="engzeemod2012")
+
+    return clean_sig
+
+
+def resample_hb_signal(
+    clean_sig: np.ndarray,
+    sig_time: np.ndarray,
+    sampling_rate: int,
+    new_sampling_rate: int,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Resample the cleaned signal to a new sampling rate.
+
+    Parameters
+    ----------
+    clean_sig : np.ndarray
+        The cleaned signal.
+    sig_time : np.ndarray
+        The time values corresponding to the signal.
+    sampling_rate : int
+        The original sampling rate of the signal.
+    new_sampling_rate : int
+        The target sampling rate.
+
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray]
+        The resampled signal and corresponding time values.
+    """
+    div = sampling_rate / new_sampling_rate
+    resampled_clean_sig, resampled_clean_sig_time = scipy.signal.resample(
+        clean_sig, num=int(len(clean_sig) / div), t=sig_time
+    )
+
+    return resampled_clean_sig, resampled_clean_sig_time
+
+
+def clean_and_resample_signal(
+    sig: np.ndarray,
+    sig_time: np.ndarray,
+    sampling_rate: int,
+    clean_method: str,
+    highcut: int,
+    new_sampling_rate: int = 100,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Clean and resample the input signal.
+
+    Parameters
+    ----------
+    sig : np.ndarray
+        The input signal.
+    sig_time : np.ndarray
+        The time values corresponding to the signal.
+    sampling_rate : int
+        The sampling rate of the signal.
+    clean_method : str
+        The method for cleaning the signal.
+    highcut : int
+        Highcut frequency for signal filtering.
+    new_sampling_rate : int, optional
+        The target sampling rate.
+
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray]
+        Tuple containing the cleaned signal and corresponding time values after resampling.
+    """
+    # Clean the signal
+    clean_sig = clean_hb_signal(sig, sampling_rate, clean_method, highcut)
+
+    # Resample the cleaned signal
+    resampled_clean_sig, resampled_clean_sig_time = resample_hb_signal(
+        clean_sig, sig_time, sampling_rate, new_sampling_rate=new_sampling_rate
+    )
+
+    return resampled_clean_sig, resampled_clean_sig_time

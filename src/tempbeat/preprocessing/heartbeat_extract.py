@@ -87,11 +87,11 @@ def resample_hb_signal(
         The resampled signal and corresponding time values.
     """
     div = sampling_rate / new_sampling_rate
-    resampled_clean_sig, resampled_sig_time = scipy.signal.resample(
+    resampled_clean_sig, resampled_clean_sig_time = scipy.signal.resample(
         clean_sig, num=int(len(clean_sig) / div), t=sig_time
     )
 
-    return resampled_clean_sig, resampled_sig_time
+    return resampled_clean_sig, resampled_clean_sig_time
 
 
 def clean_and_resample_signal(
@@ -129,16 +129,16 @@ def clean_and_resample_signal(
     clean_sig = clean_hb_signal(sig, sampling_rate, clean_method, highcut)
 
     # Resample the cleaned signal
-    clean_sig_r, clean_sig_time_r = resample_hb_signal(
+    resampled_clean_sig, resampled_clean_sig_time = resample_hb_signal(
         clean_sig, sig_time, sampling_rate, new_sampling_rate=new_sampling_rate
     )
 
-    return clean_sig_r, clean_sig_time_r
+    return resampled_clean_sig, resampled_clean_sig_time
 
 
 def extract_potential_peaks_for_template_estimation(
-    clean_sig_r: np.ndarray,
-    clean_sig_time_r: np.ndarray,
+    resampled_clean_sig: np.ndarray,
+    resampled_clean_sig_time: np.ndarray,
     sampling_rate: int,
     relative_peak_height_for_temp_min: float,
     relative_peak_height_for_temp_max: float,
@@ -150,9 +150,9 @@ def extract_potential_peaks_for_template_estimation(
 
     Parameters
     ----------
-    clean_sig_r : np.ndarray
+    resampled_clean_sig : np.ndarray
         The cleaned signal.
-    clean_sig_time_r : np.ndarray
+    resampled_clean_sig_time : np.ndarray
         The time values corresponding to the cleaned signal.
     sampling_rate : int
         The sampling rate of the signal.
@@ -172,7 +172,7 @@ def extract_potential_peaks_for_template_estimation(
     """
     window_time = 60 / min_bpm
     window = int(sampling_rate * window_time) * 2
-    potential_peaks = roll_func(clean_sig_r, window=window, func=np.max)
+    potential_peaks = roll_func(resampled_clean_sig, window=window, func=np.max)
     stand_peaks = nk.standardize(potential_peaks, robust=True)
     peaks_no_outliers = potential_peaks[
         (stand_peaks <= relative_peak_height_for_temp_max)
@@ -185,12 +185,14 @@ def extract_potential_peaks_for_template_estimation(
 
     height_min = np.min(peaks_no_outliers)
     height_max = np.max(peaks_no_outliers)
-    peak_info = nk.signal_findpeaks(clean_sig_r)
+    peak_info = nk.signal_findpeaks(resampled_clean_sig)
     good_peaks = peak_info["Peaks"][
-        (clean_sig_r[peak_info["Peaks"]] >= height_min)
-        & (clean_sig_r[peak_info["Peaks"]] <= height_max)
+        (resampled_clean_sig[peak_info["Peaks"]] >= height_min)
+        & (resampled_clean_sig[peak_info["Peaks"]] <= height_max)
     ]
-    peak_time_for_temp = samp_to_timestamp(good_peaks, sig_time=clean_sig_time_r)
+    peak_time_for_temp = samp_to_timestamp(
+        good_peaks, sig_time=resampled_clean_sig_time
+    )
     return peak_time_for_temp, height_min, height_max
 
 
@@ -252,8 +254,8 @@ def compute_rri_and_handle_anomalies_for_template(
 
 def generate_template(
     peak_time_for_temp_confident: np.ndarray,
-    clean_sig_r: np.ndarray,
-    clean_sig_time_r: np.ndarray,
+    resampled_clean_sig: np.ndarray,
+    resampled_clean_sig_time: np.ndarray,
     new_sampling_rate: int,
     temp_time_before_peak: float,
     temp_time_after_peak: float,
@@ -265,9 +267,9 @@ def generate_template(
     ----------
     peak_time_for_temp_confident : np.ndarray
         Peak times used for template generation.
-    clean_sig_r : np.ndarray
+    resampled_clean_sig : np.ndarray
         Cleaned signal after resampling.
-    clean_sig_time_r : np.ndarray
+    resampled_clean_sig_time : np.ndarray
         Time values corresponding to the cleaned signal after resampling.
     new_sampling_rate : int
         The new sampling rate after resampling.
@@ -287,8 +289,8 @@ def generate_template(
         # Extract local heartbeat signal around the peak
         hb_sig, _ = get_local_hb_sig(
             peak=peak,
-            sig=clean_sig_r,
-            sig_time=clean_sig_time_r,
+            sig=resampled_clean_sig,
+            sig_time=resampled_clean_sig_time,
             sampling_rate=new_sampling_rate,
             time_before_peak=temp_time_before_peak,
             time_after_peak=temp_time_after_peak,
@@ -316,8 +318,8 @@ def generate_template(
 
 def correlate_templates_with_signal(
     med_template: np.ndarray,
-    clean_sig_r: np.ndarray,
-    clean_sig_time_r: np.ndarray,
+    resampled_clean_sig: np.ndarray,
+    resampled_clean_sig_time: np.ndarray,
     new_sampling_rate: int,
     temp_time_before_peak: float,
     temp_time_after_peak: float,
@@ -329,9 +331,9 @@ def correlate_templates_with_signal(
     ----------
     med_template : np.ndarray
         Median template computed from generated templates.
-    clean_sig_r : np.ndarray
+    resampled_clean_sig : np.ndarray
         Cleaned signal after resampling.
-    clean_sig_time_r : np.ndarray
+    resampled_clean_sig_time : np.ndarray
         Time values corresponding to the cleaned signal after resampling.
     new_sampling_rate : int
         The new sampling rate after resampling.
@@ -347,8 +349,8 @@ def correlate_templates_with_signal(
     """
     corrs = []
     corr_times = []
-    sig = clean_sig_r
-    sig_time = clean_sig_time_r
+    sig = resampled_clean_sig
+    sig_time = resampled_clean_sig_time
     sampling_rate = new_sampling_rate
     for time in sig_time:
         hb_sig, _ = get_local_hb_sig(
@@ -443,8 +445,8 @@ def extract_potential_peaks_from_correlation(
 def handle_anomalies_in_peak_time_from_corr(
     peak_time_from_corr: np.ndarray,
     sig_time: np.ndarray,
-    clean_sig_r: np.ndarray,
-    clean_sig_time_r: np.ndarray,
+    resampled_clean_sig: np.ndarray,
+    resampled_clean_sig_time: np.ndarray,
     corrs: np.ndarray,
     corr_ind: int,
     min_n_confident_peaks: int,
@@ -468,9 +470,9 @@ def handle_anomalies_in_peak_time_from_corr(
         Peak times extracted from the correlation signal.
     sig_time : np.ndarray
         The time values corresponding to the original signal.
-    clean_sig_r : np.ndarray
+    resampled_clean_sig : np.ndarray
         Cleaned signal after resampling.
-    clean_sig_time_r : np.ndarray
+    resampled_clean_sig_time : np.ndarray
         Time values corresponding to the cleaned signal after resampling.
     corrs : np.ndarray
         The correlation signal.
@@ -504,18 +506,18 @@ def handle_anomalies_in_peak_time_from_corr(
     Tuple[np.ndarray, np.ndarray]
         Tuple containing the peak times after height-based filtering and R-R interval based filtering.
     """
-    peak_time_from_corr_confident = peak_time_from_corr[
+    peak_time_from_corr_height_filtered = peak_time_from_corr[
         (nk.standardize(corr_heights, robust=True) >= thr_corr_height)
     ]
-    if len(peak_time_from_corr_confident) < min_n_confident_peaks:
-        peak_time_from_corr_confident = peak_time_from_corr[
+    if len(peak_time_from_corr_height_filtered) < min_n_confident_peaks:
+        peak_time_from_corr_height_filtered = peak_time_from_corr[
             argtop_k(corr_heights, k=min_n_confident_peaks)
         ]
 
     # here is where the peak fixing for the higher fs signal could go?
     if find_anomalies_threshold is None:
         rri, rri_time = peak_time_to_rri(
-            peak_time_from_corr_confident,
+            peak_time_from_corr_height_filtered,
             min_rri=60000 / max_bpm,
             max_rri=60000 / min_bpm,
         )
@@ -542,41 +544,47 @@ def handle_anomalies_in_peak_time_from_corr(
         rri_time[anomalies] = np.nan
         rri[anomalies] = np.nan
         if use_rri_to_peak_time:
-            new_peak_time = rri_to_peak_time(rri=rri, rri_time=rri_time)
+            peak_time_from_corr_rri_filtered = rri_to_peak_time(
+                rri=rri, rri_time=rri_time
+            )
         else:
-            new_peak_time = np.concatenate(
-                (np.array([peak_time_from_corr_confident[0]]), rri_time)
+            peak_time_from_corr_rri_filtered = np.concatenate(
+                (np.array([peak_time_from_corr_height_filtered[0]]), rri_time)
             )
     else:
         anomalies_score = find_anomalies(
-            peak_time_from_corr_confident,
-            sig_info={"sig": clean_sig_r, "time": clean_sig_time_r},
+            peak_time_from_corr_height_filtered,
+            sig_info={"sig": resampled_clean_sig, "time": resampled_clean_sig_time},
         )
         anomalies = anomalies_score > find_anomalies_threshold
         if (
-            len(peak_time_from_corr_confident)
-            - len(peak_time_from_corr_confident[anomalies])
+            len(peak_time_from_corr_height_filtered)
+            - len(peak_time_from_corr_height_filtered[anomalies])
             < min_n_confident_peaks
         ):
             anomalies = argtop_k(
                 anomalies_score,
-                k=len(peak_time_from_corr_confident) - min_n_confident_peaks,
+                k=len(peak_time_from_corr_height_filtered) - min_n_confident_peaks,
             )
-        new_peak_time = peak_time_from_corr_confident.copy()
-        new_peak_time[anomalies] = np.nan
-        new_peak_time = new_peak_time[np.isfinite(new_peak_time)]
+        peak_time_from_corr_rri_filtered = peak_time_from_corr_height_filtered.copy()
+        peak_time_from_corr_rri_filtered[anomalies] = np.nan
+        peak_time_from_corr_rri_filtered = peak_time_from_corr_rri_filtered[
+            np.isfinite(peak_time_from_corr_rri_filtered)
+        ]
 
     min_last_peak_time = np.max(sig_time) - max_time_after_last_peak
-    if np.max(new_peak_time) < min_last_peak_time:
+    if np.max(peak_time_from_corr_rri_filtered) < min_last_peak_time:
         new_last_peak = peak_time_from_corr[
             argtop_k(corrs[corr_ind][peak_time_from_corr > min_last_peak_time], k=1)
         ]
-        new_peak_time = np.append(new_peak_time, new_last_peak)
-    return peak_time_from_corr_confident, new_peak_time
+        peak_time_from_corr_rri_filtered = np.append(
+            peak_time_from_corr_rri_filtered, new_last_peak
+        )
+    return peak_time_from_corr_height_filtered, peak_time_from_corr_rri_filtered
 
 
 def fix_final_peaks(
-    new_peak_time: np.ndarray,
+    peak_time_from_corr_rri_filtered: np.ndarray,
     orig_sig: np.ndarray,
     orig_sig_time: np.ndarray,
     orig_sampling_rate: int,
@@ -597,7 +605,7 @@ def fix_final_peaks(
 
     Parameters
     ----------
-    new_peak_time : np.ndarray
+    peak_time_from_corr_rri_filtered : np.ndarray
         Peak times after initial filtering.
     orig_sig : np.ndarray
         The original signal.
@@ -629,10 +637,14 @@ def fix_final_peaks(
         The maximum heart rate in beats per minute. Defaults to 200.
     """
     rri, _ = peak_time_to_rri(
-        new_peak_time, min_rri=60000 / max_bpm, max_rri=60000 / min_bpm
+        peak_time_from_corr_rri_filtered,
+        min_rri=60000 / max_bpm,
+        max_rri=60000 / min_bpm,
     )
 
-    new_peaks = timestamp_to_samp(new_peak_time, sig_time=orig_sig_time)
+    new_peaks = timestamp_to_samp(
+        peak_time_from_corr_rri_filtered, sig_time=orig_sig_time
+    )
 
     fixed_new_peaks = signal_fixpeaks(
         new_peaks,
@@ -662,14 +674,15 @@ def fix_final_peaks(
             [
                 peak
                 for peak in fixed_peak_time
-                if np.round(peak, 1) not in np.round(new_peak_time, dec)
+                if np.round(peak, 1)
+                not in np.round(peak_time_from_corr_rri_filtered, dec)
             ]
         )
         kept_peak_time = np.array(
             [
                 peak
                 for peak in fixed_peak_time
-                if np.round(peak, 1) in np.round(new_peak_time, dec)
+                if np.round(peak, 1) in np.round(peak_time_from_corr_rri_filtered, dec)
             ]
         )
         height_fixed_added_peak_time = fixpeaks_by_height(
@@ -696,8 +709,8 @@ def fix_final_peaks(
 
 
 def export_debug_info(
-    clean_sig_r: np.ndarray,
-    clean_sig_time_r: np.ndarray,
+    resampled_clean_sig: np.ndarray,
+    resampled_clean_sig_time: np.ndarray,
     new_sampling_rate: int,
     height_min: float,
     height_max: float,
@@ -707,8 +720,8 @@ def export_debug_info(
     corrs: np.ndarray,
     corr_times: np.ndarray,
     peak_time_from_corr: np.ndarray,
-    peak_time_from_corr_confident: np.ndarray,
-    new_peak_time: np.ndarray,
+    peak_time_from_corr_height_filtered: np.ndarray,
+    peak_time_from_corr_rri_filtered: np.ndarray,
     final_peak_time: np.ndarray,
     debug_out_path: str = None,
 ):
@@ -717,9 +730,9 @@ def export_debug_info(
 
     Parameters
     ----------
-    clean_sig_r : np.ndarray
+    resampled_clean_sig : np.ndarray
         Cleaned signal after resampling.
-    clean_sig_time_r : np.ndarray
+    resampled_clean_sig_time : np.ndarray
         Time values corresponding to the cleaned signal after resampling.
     new_sampling_rate : int
         The new sampling rate after resampling.
@@ -739,9 +752,9 @@ def export_debug_info(
         The time values corresponding to the correlation signal.
     peak_time_from_corr : np.ndarray
         Peak times extracted from the correlation signal.
-    peak_time_from_corr_confident : np.ndarray
+    peak_time_from_corr_height_filtered : np.ndarray
         Peak times extracted from the correlation signal after height-based filtering.
-    new_peak_time : np.ndarray
+    peak_time_from_corr_rri_filtered : np.ndarray
         Peak times after initial filtering.
     final_peak_time : np.ndarray
         Final peak times.
@@ -749,8 +762,8 @@ def export_debug_info(
         Path to save debug information.
     """
     debug_out = {}
-    debug_out["clean_sig_r"] = clean_sig_r
-    debug_out["clean_sig_time_r"] = clean_sig_time_r
+    debug_out["resampled_clean_sig"] = resampled_clean_sig
+    debug_out["resampled_clean_sig_time"] = resampled_clean_sig_time
     debug_out["new_sampling_rate"] = new_sampling_rate
     debug_out["height_min"] = height_min
     debug_out["height_max"] = height_max
@@ -760,13 +773,15 @@ def export_debug_info(
     debug_out["corrs"] = corrs
     debug_out["corr_times"] = corr_times
     debug_out["peak_time_from_corr"] = peak_time_from_corr
-    debug_out["peak_time_from_corr_confident"] = peak_time_from_corr_confident
-    debug_out["new_peak_time"] = new_peak_time
+    debug_out[
+        "peak_time_from_corr_height_filtered"
+    ] = peak_time_from_corr_height_filtered
+    debug_out["peak_time_from_corr_rri_filtered"] = peak_time_from_corr_rri_filtered
     debug_out["final_peak_time"] = final_peak_time
     if debug_out_path is None:
         return final_peak_time, debug_out
     else:
-        time_str = "_" + str(int(np.min(clean_sig_time_r)))
+        time_str = "_" + str(int(np.min(resampled_clean_sig_time)))
         this_debug_out_path = str(
             pathlib.Path(
                 pathlib.Path(debug_out_path).parent,
@@ -887,7 +902,7 @@ def temp_hb_extract(
 
     # Clean and resample the signal
     new_sampling_rate = 100
-    clean_sig_r, clean_sig_time_r = clean_and_resample_signal(
+    resampled_clean_sig, resampled_clean_sig_time = clean_and_resample_signal(
         sig=sig,
         sig_time=sig_time,
         sampling_rate=sampling_rate,
@@ -902,8 +917,8 @@ def temp_hb_extract(
         height_min,
         height_max,
     ) = extract_potential_peaks_for_template_estimation(
-        clean_sig_r,
-        clean_sig_time_r,
+        resampled_clean_sig,
+        resampled_clean_sig_time,
         new_sampling_rate,
         relative_peak_height_for_temp_min,
         relative_peak_height_for_temp_max,
@@ -932,8 +947,8 @@ def temp_hb_extract(
 
     med_template = generate_template(
         peak_time_for_temp_confident,
-        clean_sig_r,
-        clean_sig_time_r,
+        resampled_clean_sig,
+        resampled_clean_sig_time,
         new_sampling_rate,
         temp_time_before_peak,
         temp_time_after_peak,
@@ -941,8 +956,8 @@ def temp_hb_extract(
 
     corrs, corr_times = correlate_templates_with_signal(
         med_template,
-        clean_sig_r,
-        clean_sig_time_r,
+        resampled_clean_sig,
+        resampled_clean_sig_time,
         new_sampling_rate,
         temp_time_before_peak,
         temp_time_after_peak,
@@ -962,13 +977,13 @@ def temp_hb_extract(
     )
 
     (
-        peak_time_from_corr_confident,
-        new_peak_time,
+        peak_time_from_corr_height_filtered,
+        peak_time_from_corr_rri_filtered,
     ) = handle_anomalies_in_peak_time_from_corr(
         peak_time_from_corr,
         sig_time,
-        clean_sig_r,
-        clean_sig_time_r,
+        resampled_clean_sig,
+        resampled_clean_sig_time,
         corrs,
         corr_ind,
         min_n_confident_peaks,
@@ -985,7 +1000,7 @@ def temp_hb_extract(
     )
 
     final_peak_time = fix_final_peaks(
-        new_peak_time,
+        peak_time_from_corr_rri_filtered,
         orig_sig,
         orig_sig_time,
         orig_sampling_rate,
@@ -1006,8 +1021,8 @@ def temp_hb_extract(
         return final_peak_time
     else:
         return export_debug_info(
-            clean_sig_r,
-            clean_sig_time_r,
+            resampled_clean_sig,
+            resampled_clean_sig_time,
             new_sampling_rate,
             height_min,
             height_max,
@@ -1017,8 +1032,8 @@ def temp_hb_extract(
             corrs,
             corr_times,
             peak_time_from_corr,
-            peak_time_from_corr_confident,
-            new_peak_time,
+            peak_time_from_corr_height_filtered,
+            peak_time_from_corr_rri_filtered,
             final_peak_time,
             debug_out_path=debug_out_path,
         )

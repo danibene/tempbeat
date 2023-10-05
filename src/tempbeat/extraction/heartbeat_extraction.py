@@ -5,172 +5,20 @@ import neurokit2 as nk
 import numpy as np
 import scipy
 
-from ..utils.misc_utils import get_func_kwargs, write_dict_to_json
+from ..utils.misc_utils import drop_missing, export_debug_info, get_func_kwargs
 from ..utils.timestamps import (
     samp_to_timestamp,
     sampling_rate_to_sig_time,
     sig_time_to_sampling_rate,
     timestamp_to_samp,
 )
-from .anomaly_treatment import fix_final_peaks, remove_anomalies_from_corr_peaks
+from .anomaly_treatment import (
+    fix_final_peaks,
+    fixpeaks_by_height,
+    remove_anomalies_from_corr_peaks,
+)
 from .correlation import correlate_templates_with_signal
-from .preprocessing_heartbeat import clean_and_resample_signal, fixpeaks_by_height
-from .preprocessing_signal import drop_missing
 from .template_generation import generate_template_from_signal
-
-
-def extract_potential_peaks_from_correlation(
-    corrs: np.ndarray,
-    corr_times: np.ndarray,
-    sampling_rate: int,
-    corr_peak_extraction_method: str,
-    fix_corr_peaks_by_height: bool,
-    fixpeaks_by_height_time_boundaries: float,
-) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Extract potential peaks from the correlation signal.
-
-    Parameters
-    ----------
-    corrs : np.ndarray
-        The correlation signal.
-    corr_times : np.ndarray
-        The time values corresponding to the correlation signal.
-    sampling_rate : int
-        The sampling rate of the signal.
-    corr_peak_extraction_method : str
-        Peak extraction method used for correlation signal.
-    fix_corr_peaks_by_height : bool
-        Whether to fix correlated peaks by height.
-    fixpeaks_by_height_time_boundaries : float
-        Time boundaries for fixing peaks by height.
-
-    Returns
-    -------
-    Tuple[np.ndarray, np.ndarray, np.ndarray]
-        Tuple containing potential peaks, corresponding heights, and indices.
-    """
-    # can use the neurokit fixpeaks afterwards with the large missing values
-    # max time_before_peak/time_after_peak in fix_local hb sig with clean can be based
-    # on expected deviation from the linear interpolation i.e. mean
-    # then do final fix_local on raw data to account for resampling to 100 Hz
-    if corr_peak_extraction_method == "nk_ecg_peaks_nabian2018":
-        _, processed_info = nk.ecg_peaks(
-            corrs, method="nabian2018", sampling_rate=sampling_rate
-        )
-    elif corr_peak_extraction_method == "nk_ecg_process_kalidas2017":
-        _, processed_info = nk.ecg_process(
-            corrs, sampling_rate=sampling_rate, method="kalidas2017"
-        )
-    else:
-        _, processed_info = nk.ecg_process(corrs, sampling_rate=sampling_rate)
-    peak_key = [key for key in list(processed_info.keys()) if "Peak" in key][0]
-    ind = [processed_info[peak_key]][0].astype(int)
-    peak_time_from_corr = corr_times[ind]
-    if fix_corr_peaks_by_height:
-        peak_time_from_corr_old = peak_time_from_corr.copy()
-        peak_time_from_corr = fixpeaks_by_height(
-            peak_time_from_corr_old,
-            sig_info={
-                "time": corr_times,
-                "sig": corrs,
-                "sampling_rate": sampling_rate,
-            },
-            time_boundaries=fixpeaks_by_height_time_boundaries,
-        )
-        corr_heights = corrs[
-            timestamp_to_samp(
-                peak_time_from_corr, sampling_rate=sampling_rate, sig_time=corr_times
-            )
-        ]
-    else:
-        corr_heights = corrs[ind]
-    return peak_time_from_corr, corr_heights, ind
-
-
-def export_debug_info(
-    resampled_clean_sig: np.ndarray,
-    resampled_clean_sig_time: np.ndarray,
-    new_sampling_rate: int,
-    height_min: float,
-    height_max: float,
-    potential_peak_time_for_temp: np.ndarray,
-    peak_time_for_temp_confident: np.ndarray,
-    med_template: np.ndarray,
-    corrs: np.ndarray,
-    corr_times: np.ndarray,
-    peak_time_from_corr: np.ndarray,
-    peak_time_from_corr_height_filtered: np.ndarray,
-    peak_time_from_corr_rri_filtered: np.ndarray,
-    final_peak_time: np.ndarray,
-    debug_out_path: str = None,
-):
-    """
-    Export debug information.
-
-    Parameters
-    ----------
-    resampled_clean_sig : np.ndarray
-        Cleaned signal after resampling.
-    resampled_clean_sig_time : np.ndarray
-        Time values corresponding to the cleaned signal after resampling.
-    new_sampling_rate : int
-        The new sampling rate after resampling.
-    height_min : float
-        Minimum height of peaks.
-    height_max : float
-        Maximum height of peaks.
-    potential_peak_time_for_temp : np.ndarray
-        Peak times used for template generation.
-    peak_time_for_temp_confident : np.ndarray
-        Peak times used for template generation after height-based filtering.
-    med_template : np.ndarray
-        Median template computed from generated templates.
-    corrs : np.ndarray
-        The correlation signal.
-    corr_times : np.ndarray
-        The time values corresponding to the correlation signal.
-    peak_time_from_corr : np.ndarray
-        Peak times extracted from the correlation signal.
-    peak_time_from_corr_height_filtered : np.ndarray
-        Peak times extracted from the correlation signal after height-based filtering.
-    peak_time_from_corr_rri_filtered : np.ndarray
-        Peak times after initial filtering.
-    final_peak_time : np.ndarray
-        Final peak times.
-    debug_out_path : str, optional
-        Path to save debug information.
-    """
-    debug_out = {}
-    debug_out["resampled_clean_sig"] = resampled_clean_sig
-    debug_out["resampled_clean_sig_time"] = resampled_clean_sig_time
-    debug_out["new_sampling_rate"] = new_sampling_rate
-    debug_out["height_min"] = height_min
-    debug_out["height_max"] = height_max
-    debug_out["peak_time_for_temp"] = potential_peak_time_for_temp
-    debug_out["peak_time_for_temp_confident"] = peak_time_for_temp_confident
-    debug_out["med_template"] = med_template
-    debug_out["corrs"] = corrs
-    debug_out["corr_times"] = corr_times
-    debug_out["peak_time_from_corr"] = peak_time_from_corr
-    debug_out[
-        "peak_time_from_corr_height_filtered"
-    ] = peak_time_from_corr_height_filtered
-    debug_out["peak_time_from_corr_rri_filtered"] = peak_time_from_corr_rri_filtered
-    debug_out["final_peak_time"] = final_peak_time
-    if debug_out_path is None:
-        return final_peak_time, debug_out
-    else:
-        time_str = "_" + str(int(np.min(resampled_clean_sig_time)))
-        this_debug_out_path = str(
-            Path(
-                Path(debug_out_path).parent,
-                Path(debug_out_path).stem,
-                Path(debug_out_path).stem + time_str + ".json",
-            )
-        )
-        write_dict_to_json(debug_out, json_path=this_debug_out_path)
-        return final_peak_time
 
 
 def temp_hb_extract(
@@ -276,7 +124,10 @@ def temp_hb_extract(
 
     # Clean and resample the signal
     new_sampling_rate = 100
-    resampled_clean_sig, resampled_clean_sig_time = clean_and_resample_signal(
+    (
+        resampled_clean_sig,
+        resampled_clean_sig_time,
+    ) = _temp_hb_extract_clean_and_resample_signal(
         sig=sig,
         sig_time=sig_time,
         sampling_rate=sampling_rate,
@@ -285,6 +136,8 @@ def temp_hb_extract(
         new_sampling_rate=new_sampling_rate,
     )
 
+    # Generate template from resampled cleaned signal
+    # By taking segments around peaks with high confidence
     med_template, template_debug_out = generate_template_from_signal(
         resampled_clean_sig=resampled_clean_sig,
         resampled_clean_sig_time=resampled_clean_sig_time,
@@ -301,6 +154,7 @@ def temp_hb_extract(
         move_average_rri_window=move_average_rri_window,
     )
 
+    # Correlate the template with the resampled cleaned signal
     corrs, corr_times = correlate_templates_with_signal(
         med_template,
         resampled_clean_sig,
@@ -310,11 +164,12 @@ def temp_hb_extract(
         temp_time_after_peak,
     )
 
+    # Extract potential peaks from the correlation signal
     (
         peak_time_from_corr,
         corr_heights,
         corr_ind,
-    ) = extract_potential_peaks_from_correlation(
+    ) = _temp_hb_extract_extract_potential_peaks_from_correlation(
         corrs,
         corr_times,
         sampling_rate,
@@ -323,6 +178,7 @@ def temp_hb_extract(
         fixpeaks_by_height_time_boundaries,
     )
 
+    # Remove anomalies from the peaks detected from the correlation signal
     (
         peak_time_from_corr_height_filtered,
         peak_time_from_corr_rri_filtered,
@@ -342,6 +198,7 @@ def temp_hb_extract(
         move_average_rri_window=move_average_rri_window,
     )
 
+    # Fix peaks to fill in gaps after removing anomalies
     final_peak_time = fix_final_peaks(
         peak_time_from_corr_rri_filtered,
         orig_sig,
@@ -380,6 +237,169 @@ def temp_hb_extract(
             final_peak_time,
             debug_out_path=debug_out_path,
         )
+
+
+def _temp_hb_extract_clean_and_resample_signal(
+    sig: np.ndarray,
+    sig_time: np.ndarray,
+    sampling_rate: int,
+    clean_method: str,
+    highcut: int,
+    new_sampling_rate: int = 100,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Clean and resample the input signal.
+
+    Parameters
+    ----------
+    sig : np.ndarray
+        The input signal.
+    sig_time : np.ndarray
+        The time values corresponding to the signal.
+    sampling_rate : int
+        The sampling rate of the signal.
+    clean_method : str
+        The method for cleaning the signal.
+    highcut : int
+        Highcut frequency for signal filtering.
+    new_sampling_rate : int, optional
+        The target sampling rate.
+
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray]
+        Tuple containing the cleaned signal and corresponding time values after resampling.
+    """
+    # Clean the signal
+    if clean_method == "own_filt":
+        clean_sig = nk.signal_filter(
+            sig,
+            sampling_rate=sampling_rate,
+            lowcut=0.5,
+            highcut=highcut,
+            method="butterworth",
+            order=2,
+        )
+    else:
+        clean_sig = nk.ecg_clean(sig, method="engzeemod2012")
+
+    # Resample the cleaned signal
+    div = sampling_rate / new_sampling_rate
+    resampled_clean_sig, resampled_clean_sig_time = scipy.signal.resample(
+        clean_sig, num=int(len(clean_sig) / div), t=sig_time
+    )
+
+    return resampled_clean_sig, resampled_clean_sig_time
+
+
+def _temp_hb_extract_extract_potential_peaks_from_correlation(
+    corrs: np.ndarray,
+    corr_times: np.ndarray,
+    sampling_rate: int,
+    corr_peak_extraction_method: str,
+    fix_corr_peaks_by_height: bool,
+    fixpeaks_by_height_time_boundaries: float,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Extract potential peaks from the correlation signal.
+
+    Parameters
+    ----------
+    corrs : np.ndarray
+        The correlation signal.
+    corr_times : np.ndarray
+        The time values corresponding to the correlation signal.
+    sampling_rate : int
+        The sampling rate of the signal.
+    corr_peak_extraction_method : str
+        Peak extraction method used for correlation signal.
+    fix_corr_peaks_by_height : bool
+        Whether to fix correlated peaks by height.
+    fixpeaks_by_height_time_boundaries : float
+        Time boundaries for fixing peaks by height.
+
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray, np.ndarray]
+        Tuple containing potential peaks, corresponding heights, and indices.
+    """
+    # can use the neurokit fixpeaks afterwards with the large missing values
+    # max time_before_peak/time_after_peak in fix_local hb sig with clean can be based
+    # on expected deviation from the linear interpolation i.e. mean
+    # then do final fix_local on raw data to account for resampling to 100 Hz
+    if corr_peak_extraction_method == "nk_ecg_peaks_nabian2018":
+        _, processed_info = nk.ecg_peaks(
+            corrs, method="nabian2018", sampling_rate=sampling_rate
+        )
+    elif corr_peak_extraction_method == "nk_ecg_process_kalidas2017":
+        _, processed_info = nk.ecg_process(
+            corrs, sampling_rate=sampling_rate, method="kalidas2017"
+        )
+    else:
+        _, processed_info = nk.ecg_process(corrs, sampling_rate=sampling_rate)
+    peak_key = [key for key in list(processed_info.keys()) if "Peak" in key][0]
+    ind = [processed_info[peak_key]][0].astype(int)
+    peak_time_from_corr = corr_times[ind]
+    if fix_corr_peaks_by_height:
+        peak_time_from_corr_old = peak_time_from_corr.copy()
+        peak_time_from_corr = fixpeaks_by_height(
+            peak_time_from_corr_old,
+            sig_info={
+                "time": corr_times,
+                "sig": corrs,
+                "sampling_rate": sampling_rate,
+            },
+            time_boundaries=fixpeaks_by_height_time_boundaries,
+        )
+        corr_heights = corrs[
+            timestamp_to_samp(
+                peak_time_from_corr, sampling_rate=sampling_rate, sig_time=corr_times
+            )
+        ]
+    else:
+        corr_heights = corrs[ind]
+    return peak_time_from_corr, corr_heights, ind
+
+
+def matlab_hb_extract(
+    sig: np.ndarray,
+    sampling_rate: int = 1000,
+    detector_func_name: str = "FilterHBDetection",
+    code_path: Optional[Union[str, Path]] = None,
+):
+    if code_path is None:
+        code_path = Path(__file__).parent.parent.parent / "matlab"
+
+    m_file_paths = list(Path(code_path).rglob("*" + detector_func_name + ".m"))
+    if len(m_file_paths) == 0:
+        raise ValueError(
+            detector_func_name + ".m not found in the code path: " + str(code_path)
+        )
+    else:
+        exist_code_path_list = [p.parent for p in m_file_paths]
+
+    try:
+        import matlab.engine
+    except ImportError:
+        raise ImportError("Matlab engine is not installed.")
+
+    eng = matlab.engine.start_matlab()
+
+    for path in exist_code_path_list:
+        s = eng.genpath(str(path))
+        eng.addpath(s, nargout=0)
+
+    # [bpm,timeVector,peakTime,peakHeight,filterEnveloppe,filterData]
+    # = FilterHBDetection(inputAudio,fs,debug)
+    eng.workspace["inputAudio"] = matlab.double(np.vstack(sig).astype(dtype="float64"))
+    eng.workspace["fs"] = matlab.double(sampling_rate)
+    eng.workspace["debug"] = matlab.double(0)
+    string_eval = detector_func_name + "(inputAudio,fs,debug);"
+    _, _, prediction, _, _, _ = eng.eval(string_eval, nargout=6)
+
+    eng.quit()
+    peak_time = np.hstack(np.asarray(prediction))
+    return peak_time
 
 
 def hb_extract(
@@ -485,51 +505,10 @@ def hb_extract(
         return peak_time
     else:
         return (
-            get_mat_hb_extract(
+            matlab_hb_extract(
                 sig=sig,
                 sampling_rate=sampling_rate,
-                **get_func_kwargs(get_mat_hb_extract, **hb_extract_algo_kwargs)
+                **get_func_kwargs(matlab_hb_extract, **hb_extract_algo_kwargs)
             )
             + sig_time[0]
         )
-
-
-def get_mat_hb_extract(
-    sig: np.ndarray,
-    sampling_rate: int = 1000,
-    detector_func_name: str = "FilterHBDetection",
-    code_path: Optional[Union[str, Path]] = None,
-):
-    if code_path is None:
-        code_path = Path(__file__).parent.parent.parent / "matlab"
-
-    m_file_paths = list(Path(code_path).rglob("*" + detector_func_name + ".m"))
-    if len(m_file_paths) == 0:
-        raise ValueError(
-            detector_func_name + ".m not found in the code path: " + str(code_path)
-        )
-    else:
-        exist_code_path_list = [p.parent for p in m_file_paths]
-
-    try:
-        import matlab.engine
-    except ImportError:
-        raise ImportError("Matlab engine is not installed.")
-
-    eng = matlab.engine.start_matlab()
-
-    for path in exist_code_path_list:
-        s = eng.genpath(str(path))
-        eng.addpath(s, nargout=0)
-
-    # [bpm,timeVector,peakTime,peakHeight,filterEnveloppe,filterData]
-    # = FilterHBDetection(inputAudio,fs,debug)
-    eng.workspace["inputAudio"] = matlab.double(np.vstack(sig).astype(dtype="float64"))
-    eng.workspace["fs"] = matlab.double(sampling_rate)
-    eng.workspace["debug"] = matlab.double(0)
-    string_eval = detector_func_name + "(inputAudio,fs,debug);"
-    _, _, prediction, _, _, _ = eng.eval(string_eval, nargout=6)
-
-    eng.quit()
-    peak_time = np.hstack(np.asarray(prediction))
-    return peak_time

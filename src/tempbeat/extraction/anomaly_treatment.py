@@ -3,15 +3,88 @@ from typing import Tuple
 import neurokit2 as nk
 import numpy as np
 
-from ..utils.misc_utils import argtop_k
+from ..utils.misc_utils import a_moving_average, argtop_k
 from ..utils.timestamps import samp_to_timestamp, timestamp_to_samp
+from .interval_conversion import peak_time_to_rri, rri_to_peak_time
 from .mod_fixpeaks import signal_fixpeaks
-from .preprocessing_heartbeat import (
-    fixpeaks_by_height,
-    peak_time_to_rri,
-    rri_to_peak_time,
-)
-from .preprocessing_signal import a_moving_average
+from .segmentation import find_local_hb_peaks
+
+
+def fixpeaks_by_height(
+    peak_time: np.ndarray,
+    sig_info: dict = None,
+    clean_sig_info: dict = None,
+    sig_name: str = "zephyr_ecg",
+    time_boundaries: dict = None,
+) -> np.ndarray:
+    """
+    Fix detected peaks based on their heights.
+
+    Parameters
+    ----------
+    peak_time : np.ndarray
+        Array of peak times to be fixed.
+    sig_info : dict, optional
+        Information about the signal containing the peaks.
+    clean_sig_info : dict, optional
+        Information about the cleaned signal.
+    sig_name : str, optional
+        Name of the signal.
+    time_boundaries : dict, optional
+        Time boundaries for peak detection.
+
+    Returns
+    -------
+    np.ndarray
+        Array of fixed peak times.
+    """
+    new_peak_time = []
+    if time_boundaries is None:
+        time_boundaries = {
+            "before_peak_clean": 0.1,
+            "after_peak_clean": 0.1,
+            "before_peak_raw": (0.005,),
+            "after_peak_raw": 0.005 if sig_name == "zephyr_ecg" else 0.001,
+        }
+
+    for seg_peak_time in peak_time:
+        seg_sig = sig_info["sig"]
+        seg_sig_time = sig_info["time"]
+        sampling_rate = sig_info["sampling_rate"]
+
+        if clean_sig_info is None:
+            seg_clean_sig = nk.signal_filter(
+                seg_sig,
+                sampling_rate=sampling_rate,
+                lowcut=0.5,
+                highcut=8,
+                method="butterworth",
+                order=2,
+            )
+            seg_clean_sig_time = seg_sig_time
+        else:
+            seg_clean_sig = clean_sig_info["sig"]
+            seg_clean_sig_time = clean_sig_info["time"]
+
+        new_seg_clean_peak_time = find_local_hb_peaks(
+            peak_time=[seg_peak_time],
+            sig=seg_clean_sig,
+            sig_time=seg_clean_sig_time,
+            time_before_peak=time_boundaries["before_peak_clean"],
+            time_after_peak=time_boundaries["after_peak_clean"],
+        )
+
+        new_seg_peak_time = find_local_hb_peaks(
+            peak_time=new_seg_clean_peak_time,
+            sig=seg_sig,
+            sig_time=seg_sig_time,
+            time_before_peak=time_boundaries["before_peak_raw"],
+            time_after_peak=time_boundaries["after_peak_raw"],
+        )
+
+        new_peak_time.append(new_seg_peak_time)
+
+    return np.concatenate(new_peak_time)
 
 
 def remove_anomalies_from_corr_peaks(

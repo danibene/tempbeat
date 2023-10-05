@@ -56,20 +56,14 @@ class TestTempHbExtract:
 
 
 class TestHbExtract:
-    # parametrize the method argument
-    @pytest.mark.parametrize("method", ["nk_neurokit", "temp"])
     @staticmethod
-    def test_hb_extract(method: str) -> None:
+    @pytest.mark.parametrize("method", ["nk_neurokit", "temp"])
+    def test_hb_extract(method) -> None:
         """
         Test hb_extract with example ECG data.
 
         The function should extract the peak times such that they are within 0.01 seconds of the expected values.
         The expected values were obtained by running the function on the example ECG data with the same parameters.
-
-        Parameters
-        ----------
-        method : str
-            The method used to extract the heartbeat peaks.
         """
         sampling_rate = 100
         data = nk.data("bio_resting_5min_100hz")

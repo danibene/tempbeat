@@ -41,7 +41,7 @@ Usage
 ==========
 .. code-block:: python
 
-    from tempbeat.preprocessing import hb_extract
+    from tempbeat.extraction.heartbeat_extraction import hb_extract
     # sig is a 1D numpy array
     # peak_time is a 1D numpy array with the time of each heartbeat in seconds
     peak_time = hb_extract(sig, sampling_rate=sampling_rate, method="temp")
@@ -55,7 +55,6 @@ To use a method implemented in MATLAB, you need to have MATLAB installed and
 
 .. code-block:: python
 
-    from tempbeat.preprocessing import hb_extract
     peak_time = hb_extract(sig, sampling_rate=sampling_rate, method="matlab")
 
 .. _pyscaffold-notes:

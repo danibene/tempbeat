@@ -3,7 +3,7 @@ import numpy as np
 import numpy.random
 import pytest
 
-from tempbeat.preprocessing.mod_fixpeaks import (
+from tempbeat.extraction.mod_fixpeaks import (
     _correct_artifacts,
     _find_artifacts,
     signal_fixpeaks,

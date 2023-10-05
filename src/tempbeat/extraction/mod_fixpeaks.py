@@ -9,7 +9,7 @@ from neurokit2.signal.signal_formatpeaks import _signal_formatpeaks_sanitize
 from neurokit2.signal.signal_period import signal_period
 from neurokit2.stats import standardize
 
-from tempbeat.misc.misc_utils import argtop_k
+from tempbeat.utils.misc_utils import argtop_k
 
 
 def signal_fixpeaks(

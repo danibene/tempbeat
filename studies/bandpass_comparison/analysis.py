@@ -3,7 +3,8 @@
 from neurokit2 import data, ecg_process, signal_distort
 
 from tempbeat.evaluation.compare_bpm import get_bpm_mae_from_peak_time
-from tempbeat.utils.timestamp import samp_to_timestamp
+from tempbeat.extraction.heartbeat_extraction import hb_extract
+from tempbeat.utils.timestamp import samp_to_timestamp, sampling_rate_to_sig_time
 
 
 def main() -> None:
@@ -19,24 +20,31 @@ def main() -> None:
         clean_rpeaks["ECG_R_Peaks"], sampling_rate=sampling_rate
     )
 
-    # Replace this with audio data
-    distorted_ecg = signal_distort(
-        clean_ecg,
-        sampling_rate=sampling_rate,
-        noise_amplitude=0.5,
-        artifacts_amplitude=1,
-        artifacts_number=int(duration / 10),
-        artifacts_frequency=2,
-        random_state=random_state,
-    )
-    _, distorted_rpeaks = ecg_process(distorted_ecg, sampling_rate=sampling_rate)
-    distorted_peak_time = samp_to_timestamp(
-        distorted_rpeaks["ECG_R_Peaks"], sampling_rate=sampling_rate
-    )
-    mae_clean_distorted = get_bpm_mae_from_peak_time(
-        peak_time_a=clean_peak_time, peak_time_b=distorted_peak_time
-    )
-    print(mae_clean_distorted)
+    for hb_extract_method in ["temp", "matlab"]:
+        # Replace this with audio data
+        pretend_audio_sig = signal_distort(
+            clean_ecg,
+            sampling_rate=sampling_rate,
+            noise_amplitude=0.5,
+            artifacts_amplitude=1,
+            artifacts_number=int(duration / 10),
+            artifacts_frequency=2,
+            random_state=random_state,
+        )
+        pretend_audio_sig_time = sampling_rate_to_sig_time(
+            pretend_audio_sig, sampling_rate=sampling_rate
+        )
+        pretend_audio_peak_time = hb_extract(
+            pretend_audio_sig,
+            sig_time=pretend_audio_sig_time,
+            sampling_rate=sampling_rate,
+            method=hb_extract_method,
+        )
+        mae_clean_distorted = get_bpm_mae_from_peak_time(
+            peak_time_a=clean_peak_time, peak_time_b=pretend_audio_peak_time
+        )
+        print(hb_extract_method)
+        print(mae_clean_distorted)
 
 
 if __name__ == "__main__":

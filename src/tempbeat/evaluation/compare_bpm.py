@@ -3,7 +3,7 @@ from typing import Callable
 import numpy as np
 
 from ..extraction.interval_conversion import peak_time_to_rri
-from ..utils.interpolate import interpolate_to_same_x
+from ..utils.interpolation import interpolate_to_same_x
 from .error import get_mae
 
 

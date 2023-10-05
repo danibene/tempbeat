@@ -2,7 +2,7 @@ from neurokit2 import data, ecg_process, signal_distort
 
 from tempbeat.evaluation.compare_bpm import get_bpm_mae_from_rri
 from tempbeat.extraction.interval_conversion import peak_time_to_rri
-from tempbeat.utils.timestamps import samp_to_timestamp
+from tempbeat.utils.timestamp import samp_to_timestamp
 
 
 class TestGetBPMMaeFromRRI:

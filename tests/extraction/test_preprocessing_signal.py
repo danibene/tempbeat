@@ -4,11 +4,11 @@ import numpy as np
 import pytest
 from neurokit2 import signal_power, signal_simulate
 
-from tempbeat.preprocessing.preprocessing_utils import (
+from tempbeat.extraction.correlation import norm_corr
+from tempbeat.utils.interpolate import interpolate_nonuniform
+from tempbeat.utils.resample import resample_nonuniform
+from tempbeat.utils.timestamps import (
     check_uniform_sig_time,
-    interpolate_nonuniform,
-    norm_corr,
-    resample_nonuniform,
     samp_to_timestamp,
     sampling_rate_to_sig_time,
     sig_time_to_sampling_rate,

@@ -2,9 +2,9 @@ import neurokit2 as nk
 import numpy as np
 import pytest
 
-from tempbeat.preprocessing.heartbeat_extract import hb_extract, temp_hb_extract
-from tempbeat.preprocessing.preprocessing_heartbeat import peak_time_to_rri
-from tempbeat.preprocessing.preprocessing_utils import sampling_rate_to_sig_time
+from tempbeat.extraction.heartbeat_extraction import hb_extract, temp_hb_extract
+from tempbeat.extraction.preprocessing_heartbeat import peak_time_to_rri
+from tempbeat.utils.timestamps import sampling_rate_to_sig_time
 
 
 class TestTempHbExtract:

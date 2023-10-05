@@ -1,14 +1,14 @@
 import numpy as np
 from neurokit2 import ecg_process, ecg_simulate
 
-from tempbeat.preprocessing.preprocessing_heartbeat import (
+from tempbeat.extraction.preprocessing_heartbeat import (
     find_local_hb_peaks,
-    get_local_hb_sig,
-    interpl_intervals_preserve_nans,
     peak_time_to_rri,
     rri_to_peak_time,
 )
-from tempbeat.preprocessing.preprocessing_utils import samp_to_timestamp
+from tempbeat.extraction.segmentation import get_local_hb_sig
+from tempbeat.utils.interpolate import interpl_intervals_preserve_nans
+from tempbeat.utils.timestamps import samp_to_timestamp
 
 
 class TestPeakTimeToRRI:

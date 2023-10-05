@@ -1,6 +1,6 @@
 import numpy as np
 
-from tempbeat.misc.misc_utils import (
+from tempbeat.utils.misc_utils import (
     argtop_k,
     get_camel_case,
     get_func_kwargs,

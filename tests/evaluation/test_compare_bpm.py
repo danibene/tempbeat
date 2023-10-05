@@ -55,6 +55,7 @@ class TestGetBPMMaeFromRRI:
             clean_ecg,
             sampling_rate=sampling_rate,
             noise_amplitude=0.5,
+            noise_frequency=10,
             artifacts_amplitude=1,
             artifacts_number=int(duration / 10),
             artifacts_frequency=2,

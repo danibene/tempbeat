@@ -5,7 +5,7 @@ import numpy as np
 import scipy
 
 from ..utils.misc_utils import argtop_k, get_func_kwargs
-from ..utils.timestamps import (
+from ..utils.timestamp import (
     sampling_rate_to_sig_time,
     sig_time_to_sampling_rate,
     timestamp_to_samp,

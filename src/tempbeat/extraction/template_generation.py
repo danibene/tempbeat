@@ -4,7 +4,7 @@ import neurokit2 as nk
 import numpy as np
 
 from ..utils.misc_utils import a_moving_average, argtop_k, roll_func
-from ..utils.timestamps import samp_to_timestamp
+from ..utils.timestamp import samp_to_timestamp
 from .interval_conversion import peak_time_to_rri, rri_to_peak_time
 from .segmentation import get_local_hb_sig
 

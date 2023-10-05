@@ -340,9 +340,9 @@ def interpl_intervals_preserve_nans(
     Parameters
     ----------
     x_old : np.ndarray
-        Old x values.
+        Old x values, each being a timestamp in seconds.
     y_old : np.ndarray
-        Old y values.
+        Old y values, each being an interval (e.g. RRI) in milliseconds. Should be the same length as x_old.
     x_new : np.ndarray
         New x values for interpolation.
 
@@ -355,6 +355,7 @@ def interpl_intervals_preserve_nans(
     y_old = y_old[np.isfinite(y_old)]
     y_new_nan = np.ones(x_new.size).astype(bool)
     step = np.median(np.diff(x_new))
+    # Identify valid intervals using interval size and corresponding timestamps
     for i in range(len(x_old)):
         if i != 0:
             if np.abs((x_old[i] - (y_old[i] / 1000)) - x_old[i - 1]) < step:

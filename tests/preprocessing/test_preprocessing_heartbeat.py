@@ -4,6 +4,7 @@ from neurokit2 import ecg_process, ecg_simulate
 from tempbeat.preprocessing.preprocessing_heartbeat import (
     find_local_hb_peaks,
     get_local_hb_sig,
+    interpl_intervals_preserve_nans,
     peak_time_to_rri,
     rri_to_peak_time,
 )
@@ -178,3 +179,17 @@ class TestFindLocalHbPeaks:
         assert (
             mean_diff_local_hb_peaks_time_original < mean_diff_noisy_peak_time_original
         )
+
+
+class TestInterplIntervalsPreserveNans:
+    @staticmethod
+    def test_interpl_intervals_preserve_nans_linear_interpolation() -> None:
+        """
+        Test linear interpolation with NaN preservation.
+        """
+        rri = np.array([500, 1000, np.nan, 750])
+        rri_time = np.array([1, 2, 3, 4])
+        x_new = np.array([1, 1.5, 2, 2.5, 3, 3.5, 4])
+        result = interpl_intervals_preserve_nans(rri_time, rri, x_new)
+        expected = np.array([500, 750, 1000, np.nan, np.nan, np.nan, 750])
+        np.testing.assert_array_equal(result, expected)

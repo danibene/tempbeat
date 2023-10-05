@@ -4,7 +4,7 @@ import pytest
 
 from tempbeat.extraction.heartbeat_extraction import hb_extract, temp_hb_extract
 from tempbeat.extraction.interval_conversion import peak_time_to_rri
-from tempbeat.utils.timestamps import sampling_rate_to_sig_time
+from tempbeat.utils.timestamp import sampling_rate_to_sig_time
 
 
 class TestTempHbExtract:

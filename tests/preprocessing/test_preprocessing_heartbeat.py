@@ -1,14 +1,19 @@
 import numpy as np
-from neurokit2 import ecg_process, ecg_simulate
+from neurokit2 import data, ecg_process, ecg_simulate, signal_distort
 
+from tempbeat.evaluation.heartbeat_evaluation import get_bpm_mae_from_rri
 from tempbeat.preprocessing.preprocessing_heartbeat import (
+    find_anomalies,
     find_local_hb_peaks,
     get_local_hb_sig,
     interpl_intervals_preserve_nans,
     peak_time_to_rri,
     rri_to_peak_time,
 )
-from tempbeat.preprocessing.preprocessing_utils import samp_to_timestamp
+from tempbeat.preprocessing.preprocessing_utils import (
+    samp_to_timestamp,
+    sampling_rate_to_sig_time,
+)
 
 
 class TestPeakTimeToRRI:
@@ -182,6 +187,10 @@ class TestFindLocalHbPeaks:
 
 
 class TestInterplIntervalsPreserveNans:
+    """
+    Test cases for the interpl_intervals_preserve_nans function.
+    """
+
     @staticmethod
     def test_interpl_intervals_preserve_nans_linear_interpolation() -> None:
         """
@@ -193,3 +202,76 @@ class TestInterplIntervalsPreserveNans:
         result = interpl_intervals_preserve_nans(rri_time, rri, x_new)
         expected = np.array([500, 750, 1000, np.nan, np.nan, np.nan, 750])
         np.testing.assert_array_equal(result, expected)
+
+
+class TestFindAnomalies:
+    """
+    Test cases for the find_anomalies function.
+    """
+
+    @staticmethod
+    def test_find_anomalies() -> None:
+        """
+        Test find_anomalies with a basic example.
+
+        The function should correctly identify the anomalies.
+        """
+        # sampling_rate = 250
+        # duration = 180
+        random_state = 42
+        sampling_rate = 100
+        ecg_data = data("bio_resting_5min_100hz")
+        clean_ecg = ecg_data["ECG"].values
+        duration = len(clean_ecg) / sampling_rate
+        _, clean_rpeaks = ecg_process(clean_ecg, sampling_rate=sampling_rate)
+        clean_peak_time = samp_to_timestamp(
+            clean_rpeaks["ECG_R_Peaks"], sampling_rate=sampling_rate
+        )
+        rri_clean, rri_time_clean = peak_time_to_rri(clean_peak_time)
+
+        distorted_ecg = signal_distort(
+            clean_ecg,
+            sampling_rate=sampling_rate,
+            noise_amplitude=0.5,
+            artifacts_amplitude=1,
+            artifacts_number=int(duration / 10),
+            artifacts_frequency=2,
+            random_state=random_state,
+        )
+        _, distorted_rpeaks = ecg_process(distorted_ecg, sampling_rate=sampling_rate)
+        distorted_peak_time = samp_to_timestamp(
+            distorted_rpeaks["ECG_R_Peaks"], sampling_rate=sampling_rate
+        )
+        rri_distorted, rri_time_distored = peak_time_to_rri(distorted_peak_time)
+        mae_clean_distorted = get_bpm_mae_from_rri(
+            rri_a=rri_clean,
+            rri_b=rri_distorted,
+            rri_time_a=rri_time_clean,
+            rri_time_b=rri_time_distored,
+        )
+        # Confirm that the R-R intervals extracted from distorted signal are different from the clean signal
+        assert mae_clean_distorted > 0
+
+        anomalies_score = find_anomalies(
+            peak_time=distorted_peak_time,
+            sig_info={
+                "sig": distorted_ecg,
+                "time": sampling_rate_to_sig_time(distorted_ecg, sampling_rate),
+            },
+        )
+        find_anomalies_threshold = 0.25
+        anomalies = anomalies_score > find_anomalies_threshold
+        rri_distorted_anomalies_removed = rri_distorted[np.invert(anomalies[1:])]
+        rri_time_distorted_anomalies_removed = rri_time_distored[
+            np.invert(anomalies[1:])
+        ]
+        assert len(rri_distorted) - len(rri_distorted_anomalies_removed) > 0
+
+        mae_clean_distorted_anomalies_removed = get_bpm_mae_from_rri(
+            rri_a=rri_clean,
+            rri_b=rri_distorted_anomalies_removed,
+            rri_time_a=rri_time_clean,
+            rri_time_b=rri_time_distorted_anomalies_removed,
+        )
+
+        assert mae_clean_distorted_anomalies_removed < mae_clean_distorted

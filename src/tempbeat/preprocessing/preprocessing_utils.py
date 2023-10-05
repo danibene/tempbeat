@@ -529,3 +529,46 @@ def scale_and_clip_to_max_one(
         return x / max_value
     else:
         return x / np.nanmax(x)
+
+
+def interpolate_to_same_x(
+    a_x: np.ndarray,
+    a_y: np.ndarray,
+    b_x: np.ndarray,
+    b_y: np.ndarray,
+    interpolate_method: str = "linear",
+    interpolation_rate: int = 2,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Interpolate two arrays to have the same x values.
+
+    Parameters
+    ----------
+    a_x : np.ndarray
+        x values for the first array.
+    a_y : np.ndarray
+        y values for the first array.
+    b_x : np.ndarray
+        x values for the second array.
+    b_y : np.ndarray
+        y values for the second array.
+    interpolate_method : str, optional
+        Interpolation method, by default "linear".
+    interpolation_rate : int, optional
+        Interpolation rate, by default 2.
+
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray, np.ndarray]
+        Tuple containing the x values and interpolated y values for the first and second arrays.
+    """
+    min_x = np.min([np.min(a_x), np.min(b_x)])
+    max_x = np.max([np.max(a_x), np.max(b_x)])
+    new_x = np.arange(min_x, max_x, 1 / interpolation_rate)
+    a_y_interpolated = signal_interpolate(
+        x_values=a_x, y_values=a_y, x_new=new_x, method=interpolate_method
+    )
+    b_y_interpolated = signal_interpolate(
+        x_values=b_x, y_values=b_y, x_new=new_x, method=interpolate_method
+    )
+    return new_x, a_y_interpolated, b_y_interpolated

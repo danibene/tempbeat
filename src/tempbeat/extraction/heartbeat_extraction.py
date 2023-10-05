@@ -6,7 +6,7 @@ import numpy as np
 import scipy
 
 from ..utils.misc_utils import drop_missing, export_debug_info, get_func_kwargs
-from ..utils.timestamps import (
+from ..utils.timestamp import (
     samp_to_timestamp,
     sampling_rate_to_sig_time,
     sig_time_to_sampling_rate,
@@ -71,13 +71,13 @@ def temp_hb_extract(
     min_n_peaks_for_temp_confident : int, optional
         Minimum number of peaks to consider for computing template.
     relative_peak_height_for_temp_min : float, optional
-        Minimum relative peak height for peaks used for computing template.
+        Minimum relative peak height for peaks used to compute template.
     relative_peak_height_for_temp_max : float, optional
-        Maximum relative peak height for temporal confidence.
+        Maximum relative peak height for peaks used to compute template.
     relative_rri_for_temp_min : float, optional
-        Minimum relative RRI for temporal confidence.
+        Minimum relative RRI for intervals used to compute template.
     relative_rri_for_temp_max : float, optional
-        Maximum relative RRI for temporal confidence.
+        Maximum relative RRI for intervals used to compute template.
     min_n_confident_peaks : int, optional
         Minimum number of confident peaks.
     max_time_after_last_peak : int, optional

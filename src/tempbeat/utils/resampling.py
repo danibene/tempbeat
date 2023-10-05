@@ -3,8 +3,8 @@ from typing import Tuple, Union
 import numpy as np
 import scipy.signal
 
-from .interpolate import interpolate_nonuniform
-from .timestamps import sig_time_to_sampling_rate
+from .interpolation import interpolate_nonuniform
+from .timestamp import sig_time_to_sampling_rate
 
 
 def resample_nonuniform(

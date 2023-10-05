@@ -1008,19 +1008,21 @@ def get_mat_hb_extract(
     detector_func_name: str = "FilterHBDetection",
     code_path: Optional[Union[str, Path]] = None,
 ):
-    try:
-        import matlab.engine
-    except ImportError:
-        raise ImportError("Matlab engine is not installed.")
-
     if code_path is None:
         code_path = Path(__file__).parent.parent.parent / "mat"
 
     m_file_paths = list(Path(code_path).rglob("*" + detector_func_name + ".m"))
     if len(m_file_paths) == 0:
-        raise ValueError(detector_func_name + ".m not found in the code path.")
+        raise ValueError(
+            detector_func_name + ".m not found in the code path: " + str(code_path)
+        )
     else:
         exist_code_path_list = [p.parent for p in m_file_paths]
+
+    try:
+        import matlab.engine
+    except ImportError:
+        raise ImportError("Matlab engine is not installed.")
 
     eng = matlab.engine.start_matlab()
 

@@ -942,7 +942,7 @@ def hb_extract(
         elif sig_name == "ti_ppg":
             method = "nk_elgendi"
         else:
-            method = "mat"
+            method = "matlab"
     if "temp" in method:
         return temp_hb_extract(
             sig=sig,
@@ -1009,7 +1009,7 @@ def get_mat_hb_extract(
     code_path: Optional[Union[str, Path]] = None,
 ):
     if code_path is None:
-        code_path = Path(__file__).parent.parent.parent / "mat"
+        code_path = Path(__file__).parent.parent.parent / "matlab"
 
     m_file_paths = list(Path(code_path).rglob("*" + detector_func_name + ".m"))
     if len(m_file_paths) == 0:

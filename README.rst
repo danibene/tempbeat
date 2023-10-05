@@ -37,8 +37,26 @@ tempbeat
     Template-based in-ear heartbeat extraction
 
 
-A longer description of your project goes here...
+Usage
+==========
+.. code-block:: python
 
+    from tempbeat.preprocessing import hb_extract
+    # sig is a 1D numpy array
+    # peak_time is a 1D numpy array with the time of each heartbeat in seconds
+    peak_time = hb_extract(sig, sampling_rate=sampling_rate, method="temp")
+
+To use a method implemented in MATLAB, you need to have MATLAB installed and
+`the MATLAB engine for Python`_. After putting the MATLAB code in the
+``src/matlab`` folder, you can use it as follows:
+
+.. _the MATLAB engine for Python: https://www.mathworks.com/help/matlab/matlab-engine-for-python.html
+
+
+.. code-block:: python
+
+    from tempbeat.preprocessing import hb_extract
+    peak_time = hb_extract(sig, sampling_rate=sampling_rate, method="matlab")
 
 .. _pyscaffold-notes:
 

@@ -7,7 +7,7 @@ from neurokit2.hrv.intervals_utils import _intervals_successive
 from scipy import interpolate
 
 from ..misc.misc_utils import argtop_k, get_func_kwargs
-from .preprocessing_utils import (
+from .timestamps import (
     sampling_rate_to_sig_time,
     sig_time_to_sampling_rate,
     timestamp_to_samp,

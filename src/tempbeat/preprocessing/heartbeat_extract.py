@@ -14,11 +14,8 @@ from .preprocessing_heartbeat import (
     peak_time_to_rri,
     rri_to_peak_time,
 )
-from .preprocessing_utils import (
-    a_moving_average,
-    drop_missing,
-    norm_corr,
-    roll_func,
+from .preprocessing_utils import a_moving_average, drop_missing, norm_corr, roll_func
+from .timestamps import (
     samp_to_timestamp,
     sampling_rate_to_sig_time,
     sig_time_to_sampling_rate,

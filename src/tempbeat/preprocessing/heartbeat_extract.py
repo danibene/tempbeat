@@ -1,10 +1,11 @@
-import pathlib
-from typing import Tuple
+from pathlib import Path
+from typing import Optional, Tuple, Union
 
 import neurokit2 as nk
 import numpy as np
+import scipy
 
-from ..misc.misc_utils import argtop_k, write_dict_to_json
+from ..misc.misc_utils import argtop_k, get_func_kwargs, write_dict_to_json
 from .mod_fixpeaks import signal_fixpeaks
 from .preprocessing_heartbeat import (
     clean_and_resample_signal,
@@ -15,9 +16,12 @@ from .preprocessing_heartbeat import (
 )
 from .preprocessing_utils import (
     a_moving_average,
+    drop_missing,
     norm_corr,
     roll_func,
     samp_to_timestamp,
+    sampling_rate_to_sig_time,
+    sig_time_to_sampling_rate,
     timestamp_to_samp,
 )
 
@@ -636,10 +640,10 @@ def export_debug_info(
     else:
         time_str = "_" + str(int(np.min(resampled_clean_sig_time)))
         this_debug_out_path = str(
-            pathlib.Path(
-                pathlib.Path(debug_out_path).parent,
-                pathlib.Path(debug_out_path).stem,
-                pathlib.Path(debug_out_path).stem + time_str + ".json",
+            Path(
+                Path(debug_out_path).parent,
+                Path(debug_out_path).stem,
+                Path(debug_out_path).stem + time_str + ".json",
             )
         )
         write_dict_to_json(debug_out, json_path=this_debug_out_path)
@@ -884,3 +888,156 @@ def temp_hb_extract(
             final_peak_time,
             debug_out_path=debug_out_path,
         )
+
+
+def hb_extract(
+    sig: np.ndarray,
+    sampling_rate: int = 1000,
+    sig_time: Optional[np.ndarray] = None,
+    sig_name: Optional[str] = None,
+    method: Optional[str] = None,
+    subtract_mean: bool = True,
+    hb_extract_algo_kwargs: Optional[dict] = None,
+) -> np.ndarray:
+    """
+    Extract heartbeat times from a signal.
+
+    Parameters
+    ----------
+    sig : np.ndarray
+        The input signal.
+    sampling_rate : int, optional
+        The sampling rate of the signal.
+    sig_time : Optional[np.ndarray], optional
+        The time values corresponding to the signal.
+    sig_name : Optional[str], optional
+        The name of the signal.
+    method : Optional[str], optional
+        The method for extracting heartbeat times.
+    subtract_mean : bool, optional
+        Whether to subtract the mean from the signal.
+    hb_extract_algo_kwargs : Optional[dict], optional
+        Keyword arguments for the heartbeat extraction algorithm.
+
+    Returns
+    -------
+    np.ndarray
+        The extracted heartbeat times.
+    """
+
+    if hb_extract_algo_kwargs is None:
+        hb_extract_algo_kwargs = {}
+    if sig_time is None:
+        sig_time = sampling_rate_to_sig_time(sig=sig, sampling_rate=sampling_rate)
+    else:
+        sampling_rate = sig_time_to_sampling_rate(sig_time=sig_time)
+    sig, sig_time = drop_missing(sig, sig_time=sig_time)
+    if subtract_mean:
+        sig = sig - np.nanmean(sig)
+    if method is None:
+        if sig_name is None:
+            method = "nk_neurokit"
+        elif sig_name == "zephyr_ecg":
+            method = "nk_neurokit"
+        elif sig_name == "ti_ppg":
+            method = "nk_elgendi"
+        else:
+            method = "matlab"
+    if "temp" in method:
+        return temp_hb_extract(
+            sig=sig,
+            sig_time=sig_time,
+            sampling_rate=sampling_rate,
+            **get_func_kwargs(temp_hb_extract, **hb_extract_algo_kwargs)
+        )
+    if "ecg_audio" in method.lower() or "nk" in method.lower():
+        if "nk" in method:
+            nk_method = method[3:]
+            if sampling_rate > 1000:
+                old_sampling_rate = sampling_rate
+                sampling_rate = 1000
+                sig, sig_time = scipy.signal.resample(
+                    sig,
+                    int(len(sig) * (sampling_rate / old_sampling_rate)),
+                    t=sig_time,
+                )
+
+            if "nk_ecg_" in method or "nk_ppg_" in method.lower():
+                nk_method = nk_method[4:]
+
+            if "ppg" in str(sig_name) or "nk_ppg_" in method.lower():
+                processed = nk.ppg.ppg_process(
+                    sig, sampling_rate=sampling_rate, method=nk_method
+                )
+                bin_peak_col = "PPG_Peaks"
+            else:
+                processed = nk.ecg.ecg_process(
+                    sig,
+                    sampling_rate=sampling_rate,
+                    method=nk_method,
+                    **get_func_kwargs(
+                        nk.ecg.ecg_process,
+                        exclude_keys=["method"],
+                        **hb_extract_algo_kwargs
+                    )
+                )
+                bin_peak_col = "ECG_R_Peaks"
+            bin_peak_sig = processed[0][bin_peak_col].values
+        else:
+            bin_peak_sig = sig
+        peak_as_one = np.array(bin_peak_sig / np.nanmax(bin_peak_sig)).astype(int)
+        peak_samp = np.where(peak_as_one == 1)[0]
+        peak_time = samp_to_timestamp(
+            samp=peak_samp, sampling_rate=sampling_rate, sig_time=sig_time
+        )
+        return peak_time
+    else:
+        return (
+            get_mat_hb_extract(
+                sig=sig,
+                sampling_rate=sampling_rate,
+                **get_func_kwargs(get_mat_hb_extract, **hb_extract_algo_kwargs)
+            )
+            + sig_time[0]
+        )
+
+
+def get_mat_hb_extract(
+    sig: np.ndarray,
+    sampling_rate: int = 1000,
+    detector_func_name: str = "FilterHBDetection",
+    code_path: Optional[Union[str, Path]] = None,
+):
+    if code_path is None:
+        code_path = Path(__file__).parent.parent.parent / "matlab"
+
+    m_file_paths = list(Path(code_path).rglob("*" + detector_func_name + ".m"))
+    if len(m_file_paths) == 0:
+        raise ValueError(
+            detector_func_name + ".m not found in the code path: " + str(code_path)
+        )
+    else:
+        exist_code_path_list = [p.parent for p in m_file_paths]
+
+    try:
+        import matlab.engine
+    except ImportError:
+        raise ImportError("Matlab engine is not installed.")
+
+    eng = matlab.engine.start_matlab()
+
+    for path in exist_code_path_list:
+        s = eng.genpath(str(path))
+        eng.addpath(s, nargout=0)
+
+    # [bpm,timeVector,peakTime,peakHeight,filterEnveloppe,filterData]
+    # = FilterHBDetection(inputAudio,fs,debug)
+    eng.workspace["inputAudio"] = matlab.double(np.vstack(sig).astype(dtype="float64"))
+    eng.workspace["fs"] = matlab.double(sampling_rate)
+    eng.workspace["debug"] = matlab.double(0)
+    string_eval = detector_func_name + "(inputAudio,fs,debug);"
+    _, _, prediction, _, _, _ = eng.eval(string_eval, nargout=6)
+
+    eng.quit()
+    peak_time = np.hstack(np.asarray(prediction))
+    return peak_time

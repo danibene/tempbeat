@@ -572,3 +572,41 @@ def interpolate_to_same_x(
         x_values=b_x, y_values=b_y, x_new=new_x, method=interpolate_method
     )
     return new_x, a_y_interpolated, b_y_interpolated
+
+
+def drop_missing(
+    sig: np.ndarray,
+    sig_time: Optional[np.ndarray] = None,
+    missing_value: float = np.nan,
+) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
+    """
+    Drop missing values from a signal.
+
+    This function drops missing values from a signal. If a signal time array is provided, the
+    function also drops the corresponding timestamps.
+
+    Parameters
+    ----------
+    sig : np.ndarray
+        Input signal.
+    sig_time : Optional[np.ndarray], optional
+        Array of timestamps corresponding to each sample. If not provided, timestamps
+        are calculated based on the sampling rate.
+    missing_value : float, optional
+        Value to be considered missing. Default is np.nan.
+
+    Returns
+    -------
+    Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]
+        If a signal time array is provided, a tuple containing the signal and signal time arrays
+        with missing values dropped. Otherwise, the signal array with missing values dropped.
+    """
+    if np.isnan(missing_value):
+        not_missing = np.invert(np.isnan(sig))
+    else:
+        not_missing = np.where(sig == missing_value)
+    sig = sig[not_missing]
+    if sig_time is not None:
+        sig_time = sig_time[not_missing]
+        return sig, sig_time
+    return sig

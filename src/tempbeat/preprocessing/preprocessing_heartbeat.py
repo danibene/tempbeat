@@ -8,9 +8,7 @@ from scipy import interpolate
 
 from ..misc.misc_utils import argtop_k, get_func_kwargs
 from .preprocessing_utils import (
-    a_moving_average,
     sampling_rate_to_sig_time,
-    scale_and_clip_to_max_one,
     sig_time_to_sampling_rate,
     timestamp_to_samp,
 )
@@ -367,106 +365,6 @@ def interpl_intervals_preserve_nans(
     y_new = f(x_new)
     y_new[y_new_nan] = np.nan
     return y_new
-
-
-def find_anomalies(
-    peak_time: np.ndarray, sig_info: dict = None, check_successive: bool = True
-) -> np.ndarray:
-    """
-    Detect anomalies in peak times using various features.
-
-    Parameters
-    ----------
-    peak_time : np.ndarray
-        Array of peak times.
-    sig_info : dict, optional
-        Information about the signal.
-    check_successive : bool, optional
-        Whether to check for successive intervals.
-
-    Returns
-    -------
-    np.ndarray
-        Array indicating anomalies in peak times.
-    """
-    peak_time = np.array(peak_time)
-
-    rri, rri_time = peak_time_to_rri(peak_time, min_rri=60000 / 200, max_rri=60000 / 20)
-    interpolation_rate = 4
-    inter_f_time = np.arange(
-        rri_time[0] - rri[0] / 1000 - 60 / 40,
-        rri_time[-1] + 60 / 40,
-        1 / interpolation_rate,
-    )
-    rri_mid_time = rri_time - (rri / 1000) / 2
-    inter_rri = interpl_intervals_preserve_nans(rri_mid_time, rri, inter_f_time)
-    diff_rri = np.diff(rri)
-    if check_successive:
-        diff_rri = diff_rri[_intervals_successive(rri, rri_time)]
-        diff_rri_time = rri_time[1:][_intervals_successive(rri, rri_time)]
-        successive_rri = rri[1:][_intervals_successive(rri, rri_time)]
-
-    diff_rri_mid_time = diff_rri_time - successive_rri / 1000
-    inter_diff_rri = interpl_intervals_preserve_nans(
-        diff_rri_mid_time, diff_rri, inter_f_time
-    )
-
-    max_rri = 60000 / 40
-    min_rri = 60000 / 200
-    max_theoretically_possible_diff_rri = max_rri - min_rri
-    acceptable_diff_rri = 600
-    median_rri = np.nanmedian(inter_rri)
-    n_intervals = 2
-    N = round(((median_rri / 1000) * n_intervals) / (1 / interpolation_rate))
-
-    f1 = a_moving_average(
-        scale_and_clip_to_max_one(
-            np.abs(nk.standardize(inter_rri, robust=True)), min_value=1, max_value=10
-        ),
-        N=N,
-    )
-    n_intervals = 3
-    N = round(((median_rri / 1000) * n_intervals) / (1 / interpolation_rate))
-    f2 = a_moving_average(
-        scale_and_clip_to_max_one(
-            np.abs(nk.standardize(inter_diff_rri, robust=True)),
-            min_value=1,
-            max_value=10,
-        ),
-        N=N,
-    )
-
-    f3 = a_moving_average(
-        scale_and_clip_to_max_one(
-            np.abs(inter_diff_rri),
-            min_value=acceptable_diff_rri,
-            max_value=max_theoretically_possible_diff_rri,
-        ),
-        N=N,
-    )
-
-    peak_time_from_rri = rri_to_peak_time(rri, rri_time)
-    if sig_info is not None:
-        peak_height = sig_info["sig"][
-            timestamp_to_samp(peak_time, sig_time=sig_info["time"])
-        ]
-        inter_peak_height = nk.signal_interpolate(peak_time, peak_height, inter_f_time)
-        f4 = scale_and_clip_to_max_one(
-            np.abs(nk.standardize(inter_peak_height, robust=True)),
-            max_value=10,
-            min_value=2,
-        )
-    else:
-        f4 = np.zeros(f1.shape)
-
-    f_sum = a_moving_average(
-        np.nansum([f1 * 0.25, f2 * 0.25, f3 * 0.25, f4 * 0.25], axis=0), 2
-    )
-    excluded_peak_time = np.array(
-        [peak for peak in peak_time if peak_time not in peak_time_from_rri]
-    )
-    f_sum[timestamp_to_samp(excluded_peak_time, sig_time=inter_f_time)] = 1
-    return f_sum[timestamp_to_samp(peak_time, sig_time=inter_f_time)]
 
 
 def clean_hb_signal(

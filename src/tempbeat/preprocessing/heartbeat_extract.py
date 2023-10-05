@@ -8,7 +8,6 @@ from ..misc.misc_utils import argtop_k, write_dict_to_json
 from .mod_fixpeaks import signal_fixpeaks
 from .preprocessing_heartbeat import (
     clean_and_resample_signal,
-    find_anomalies,
     fixpeaks_by_height,
     get_local_hb_sig,
     peak_time_to_rri,
@@ -332,8 +331,6 @@ def extract_potential_peaks_from_correlation(
 def handle_anomalies_in_peak_time_from_corr(
     peak_time_from_corr: np.ndarray,
     sig_time: np.ndarray,
-    resampled_clean_sig: np.ndarray,
-    resampled_clean_sig_time: np.ndarray,
     corrs: np.ndarray,
     corr_ind: int,
     min_n_confident_peaks: int,
@@ -345,7 +342,6 @@ def handle_anomalies_in_peak_time_from_corr(
     max_bpm: int = 200,
     max_time_after_last_peak: int = 5,
     use_rri_to_peak_time: bool = False,
-    find_anomalies_threshold: float = None,
     move_average_rri_window: int = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -357,10 +353,6 @@ def handle_anomalies_in_peak_time_from_corr(
         Peak times extracted from the correlation signal.
     sig_time : np.ndarray
         The time values corresponding to the original signal.
-    resampled_clean_sig : np.ndarray
-        Cleaned signal after resampling.
-    resampled_clean_sig_time : np.ndarray
-        Time values corresponding to the cleaned signal after resampling.
     corrs : np.ndarray
         The correlation signal.
     corr_ind : int
@@ -383,8 +375,6 @@ def handle_anomalies_in_peak_time_from_corr(
         Maximum time after the last peak.
     use_rri_to_peak_time : bool, optional
         Whether to use RRI for peak time.
-    find_anomalies_threshold : float, optional
-        Threshold for finding anomalies.
     move_average_rri_window : int, optional
         Window size for moving average of RRI.
 
@@ -401,63 +391,39 @@ def handle_anomalies_in_peak_time_from_corr(
             argtop_k(corr_heights, k=min_n_confident_peaks)
         ]
 
-    # here is where the peak fixing for the higher fs signal could go?
-    if find_anomalies_threshold is None:
-        rri, rri_time = peak_time_to_rri(
-            peak_time_from_corr_height_filtered,
-            min_rri=60000 / max_bpm,
-            max_rri=60000 / min_bpm,
+    rri, rri_time = peak_time_to_rri(
+        peak_time_from_corr_height_filtered,
+        min_rri=60000 / max_bpm,
+        max_rri=60000 / min_bpm,
+    )
+
+    if move_average_rri_window is not None:
+        stand = np.abs(nk.standardize(rri, robust=True))
+        stand = a_moving_average(stand, N=move_average_rri_window)
+        relative_rri_for_temp = np.mean(
+            np.abs([relative_rri_for_temp_min, relative_rri_for_temp_max])
         )
-
-        if move_average_rri_window is not None:
-            stand = np.abs(nk.standardize(rri, robust=True))
-            stand = a_moving_average(stand, N=move_average_rri_window)
-            relative_rri_for_temp = np.mean(
-                np.abs([relative_rri_for_temp_min, relative_rri_for_temp_max])
-            )
-            anomalies = np.invert(stand <= relative_rri_for_temp)
-        else:
-            anomalies = np.invert(
-                (nk.standardize(rri, robust=True) >= relative_rri_for_temp_min)
-                & (nk.standardize(rri, robust=True) <= relative_rri_for_temp_max)
-            )
-
-        if len(rri_time) - len(rri_time[anomalies]) < min_n_confident_peaks - 1:
-            anomalies = argtop_k(
-                np.abs(nk.standardize(rri, robust=True)),
-                k=len(rri) - min_n_confident_peaks,
-            )
-
-        rri_time[anomalies] = np.nan
-        rri[anomalies] = np.nan
-        if use_rri_to_peak_time:
-            peak_time_from_corr_rri_filtered = rri_to_peak_time(
-                rri=rri, rri_time=rri_time
-            )
-        else:
-            peak_time_from_corr_rri_filtered = np.concatenate(
-                (np.array([peak_time_from_corr_height_filtered[0]]), rri_time)
-            )
+        anomalies = np.invert(stand <= relative_rri_for_temp)
     else:
-        anomalies_score = find_anomalies(
-            peak_time_from_corr_height_filtered,
-            sig_info={"sig": resampled_clean_sig, "time": resampled_clean_sig_time},
+        anomalies = np.invert(
+            (nk.standardize(rri, robust=True) >= relative_rri_for_temp_min)
+            & (nk.standardize(rri, robust=True) <= relative_rri_for_temp_max)
         )
-        anomalies = anomalies_score > find_anomalies_threshold
-        if (
-            len(peak_time_from_corr_height_filtered)
-            - len(peak_time_from_corr_height_filtered[anomalies])
-            < min_n_confident_peaks
-        ):
-            anomalies = argtop_k(
-                anomalies_score,
-                k=len(peak_time_from_corr_height_filtered) - min_n_confident_peaks,
-            )
-        peak_time_from_corr_rri_filtered = peak_time_from_corr_height_filtered.copy()
-        peak_time_from_corr_rri_filtered[anomalies] = np.nan
-        peak_time_from_corr_rri_filtered = peak_time_from_corr_rri_filtered[
-            np.isfinite(peak_time_from_corr_rri_filtered)
-        ]
+
+    if len(rri_time) - len(rri_time[anomalies]) < min_n_confident_peaks - 1:
+        anomalies = argtop_k(
+            np.abs(nk.standardize(rri, robust=True)),
+            k=len(rri) - min_n_confident_peaks,
+        )
+
+    rri_time[anomalies] = np.nan
+    rri[anomalies] = np.nan
+    if use_rri_to_peak_time:
+        peak_time_from_corr_rri_filtered = rri_to_peak_time(rri=rri, rri_time=rri_time)
+    else:
+        peak_time_from_corr_rri_filtered = np.concatenate(
+            (np.array([peak_time_from_corr_height_filtered[0]]), rri_time)
+        )
 
     min_last_peak_time = np.max(sig_time) - max_time_after_last_peak
     if np.max(peak_time_from_corr_rri_filtered) < min_last_peak_time:
@@ -707,7 +673,6 @@ def temp_hb_extract(
     temp_time_after_peak: float = 0.3,
     fixpeaks_by_height_time_boundaries: float = None,
     use_rri_to_peak_time: bool = True,
-    find_anomalies_threshold: float = None,
     move_average_rri_window: int = 3,
     output_format: str = "only_final",
     debug_out_path: str = None,
@@ -769,8 +734,6 @@ def temp_hb_extract(
         Time boundaries for fixing peaks by height.
     use_rri_to_peak_time : bool, optional
         Whether to use RRI for peak time.
-    find_anomalies_threshold : float, optional
-        Threshold for finding anomalies.
     move_average_rri_window : int, optional
         Window size for moving average of RRI.
     output_format : str, optional
@@ -869,8 +832,6 @@ def temp_hb_extract(
     ) = handle_anomalies_in_peak_time_from_corr(
         peak_time_from_corr,
         sig_time,
-        resampled_clean_sig,
-        resampled_clean_sig_time,
         corrs,
         corr_ind,
         min_n_confident_peaks,
@@ -882,7 +843,6 @@ def temp_hb_extract(
         max_bpm=max_bpm,
         max_time_after_last_peak=max_time_after_last_peak,
         use_rri_to_peak_time=use_rri_to_peak_time,
-        find_anomalies_threshold=find_anomalies_threshold,
         move_average_rri_window=move_average_rri_window,
     )
 

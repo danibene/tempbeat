@@ -172,7 +172,7 @@ def temp_hb_extract(
     ) = _temp_hb_extract_extract_potential_peaks_from_correlation(
         corrs,
         corr_times,
-        sampling_rate,
+        new_sampling_rate,
         corr_peak_extraction_method,
         fix_corr_peaks_by_height,
         fixpeaks_by_height_time_boundaries,

@@ -1,0 +1,4 @@
+neurokit2==0.2.6
+numpy==1.24.3
+pandas==1.4.4
+scipy==1.9.1

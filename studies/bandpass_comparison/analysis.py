@@ -132,7 +132,7 @@ def main() -> None:
                                 method=hb_extract_method,
                             )
                             mae_clean_distorted = get_bpm_mae_from_peak_time(
-                                peak_time_a=clean_peak_time, peak_time_b=audio_peak_time
+                                peak_time_a=clean_peak_time, peak_time_b=audio_peak_time, unit="rri"
                             )
 
                             peaks_list.append(audio_peak_time)

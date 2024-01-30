@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 
-# import os
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-# import numpy as np
 import pandas as pd
 import scipy
 import seaborn as sns
@@ -17,8 +15,6 @@ from tempbeat.extraction.interval_conversion import peak_time_to_rri
 from tempbeat.utils.interpolation import interpolate_to_same_x
 from tempbeat.utils.matlab_utils import quit_matlab, set_matlab
 from tempbeat.utils.timestamp import sampling_rate_to_sig_time
-
-# from neurokit2 import data, ecg_process, signal_distort
 
 
 def read_audio_section(filename, start_time, stop_time):
@@ -132,7 +128,9 @@ def main() -> None:
                                 method=hb_extract_method,
                             )
                             mae_clean_distorted = get_bpm_mae_from_peak_time(
-                                peak_time_a=clean_peak_time, peak_time_b=audio_peak_time, unit="rri"
+                                peak_time_a=clean_peak_time,
+                                peak_time_b=audio_peak_time,
+                                unit="rri",
                             )
 
                             peaks_list.append(audio_peak_time)

@@ -5,6 +5,7 @@ import neurokit2 as nk
 import numpy as np
 import scipy
 
+from ..utils.matlab_utils import get_matlab
 from ..utils.misc_utils import drop_missing, export_debug_info, get_func_kwargs
 from ..utils.timestamp import (
     samp_to_timestamp,
@@ -19,6 +20,193 @@ from .anomaly_treatment import (
 )
 from .correlation import correlate_templates_with_signal
 from .template_generation import generate_template_from_signal
+
+
+def no_temp_hb_extract(
+    sig: np.ndarray,
+    sig_time: np.ndarray = None,
+    sampling_rate: int = 1000,
+    min_bpm: int = 40,
+    max_bpm: int = 200,
+    thr_corr_height: float = -2.5,
+    min_n_peaks_for_temp_confident: int = 5,
+    relative_peak_height_for_temp_min: float = -2,
+    relative_peak_height_for_temp_max: float = 2,
+    relative_rri_for_temp_min: float = -2.5,
+    relative_rri_for_temp_max: float = 2.5,
+    min_n_confident_peaks: int = 20,
+    max_time_after_last_peak: int = 5,
+    clean_method: str = "own_filt",
+    highcut: int = 25,
+    fix_corr_peaks_by_height: bool = False,
+    fix_interpl_peaks_by_height: bool = False,
+    fix_added_interpl_peaks_by_height: bool = False,
+    corr_peak_extraction_method: str = "nk_ecg_process",
+    k_nearest_intervals: int = 8,
+    n_nan_estimation_method: str = "round",
+    interpolate_args: dict = {"method": "akima"},
+    temp_time_before_peak: float = 0.3,
+    temp_time_after_peak: float = 0.3,
+    fixpeaks_by_height_time_boundaries: float = None,
+    move_average_rri_window: int = 3,
+    output_format: str = "only_final",
+    debug_out_path: str = None,
+) -> np.ndarray:
+    """
+    Template-based heartbeat extraction.
+
+    Parameters
+    ----------
+    sig : np.ndarray
+        The input signal.
+    sig_time : np.ndarray, optional
+        The time values corresponding to the signal.
+    sampling_rate : int, optional
+        The sampling rate of the signal.
+    min_bpm : int, optional
+        The minimum heart rate in beats per minute.
+    max_bpm : int, optional
+        The maximum heart rate in beats per minute.
+    thr_corr_height : float, optional
+        Threshold for correlation height.
+    min_n_peaks_for_temp_confident : int, optional
+        Minimum number of peaks to consider for computing template.
+    relative_peak_height_for_temp_min : float, optional
+        Minimum relative peak height for peaks used to compute template.
+    relative_peak_height_for_temp_max : float, optional
+        Maximum relative peak height for peaks used to compute template.
+    relative_rri_for_temp_min : float, optional
+        Minimum relative RRI for intervals used to compute template.
+    relative_rri_for_temp_max : float, optional
+        Maximum relative RRI for intervals used to compute template.
+    min_n_confident_peaks : int, optional
+        Minimum number of confident peaks.
+    max_time_after_last_peak : int, optional
+        Maximum time after the last peak.
+    clean_method : str, optional
+        The method for cleaning the signal.
+    highcut : int, optional
+        Highcut frequency for signal filtering.
+    fix_corr_peaks_by_height : bool, optional
+        Whether to fix correlated peaks by height.
+    fix_interpl_peaks_by_height : bool, optional
+        Whether to fix interpolated peaks by height.
+    fix_added_interpl_peaks_by_height : bool, optional
+        Whether to fix added interpolated peaks by height.
+    corr_peak_extraction_method : str, optional
+        Peak extraction method used for correlation signal.
+    k_nearest_intervals : int, optional
+        The number of nearest intervals.
+    n_nan_estimation_method : str, optional
+        Method for estimating NaNs.
+    interpolate_args : dict, optional
+        Arguments for interpolation.
+    temp_time_before_peak : float, optional
+        Time before peak for template extraction.
+    temp_time_after_peak : float, optional
+        Time after peak for template extraction.
+    fixpeaks_by_height_time_boundaries : float, optional
+        Time boundaries for fixing peaks by height.
+    move_average_rri_window : int, optional
+        Window size for moving average of RRI.
+    output_format : str, optional
+        Output format ('only_final' or 'full').
+    debug_out_path : str, optional
+        Path for debug output.
+
+    Returns
+    -------
+    np.ndarray
+        The extracted heartbeat times.
+    """
+    orig_sig = sig.copy()
+    orig_sig_time = sig_time.copy()
+    orig_sampling_rate = sampling_rate
+
+    # Clean and resample the signal
+    new_sampling_rate = 100
+    (
+        resampled_clean_sig,
+        resampled_clean_sig_time,
+    ) = _temp_hb_extract_clean_and_resample_signal(
+        sig=sig,
+        sig_time=sig_time,
+        sampling_rate=sampling_rate,
+        clean_method=clean_method,
+        highcut=highcut,
+        new_sampling_rate=new_sampling_rate,
+    )
+
+    corrs = resampled_clean_sig
+    corr_times = resampled_clean_sig_time
+    # Extract potential peaks from the correlation signal
+    (
+        peak_time_from_corr,
+        corr_heights,
+        corr_ind,
+    ) = _temp_hb_extract_extract_potential_peaks_from_correlation(
+        corrs,
+        corr_times,
+        sampling_rate,
+        corr_peak_extraction_method,
+        fix_corr_peaks_by_height,
+        fixpeaks_by_height_time_boundaries,
+    )
+
+    # Remove anomalies from the peaks detected from the correlation signal
+    (
+        peak_time_from_corr_height_filtered,
+        peak_time_from_corr_rri_filtered,
+    ) = remove_anomalies_from_corr_peaks(
+        peak_time_from_corr,
+        sig_time,
+        corrs,
+        corr_ind,
+        min_n_confident_peaks,
+        corr_heights,
+        thr_corr_height,
+        relative_rri_for_temp_min,
+        relative_rri_for_temp_max,
+        min_bpm=min_bpm,
+        max_bpm=max_bpm,
+        max_time_after_last_peak=max_time_after_last_peak,
+        move_average_rri_window=move_average_rri_window,
+    )
+
+    # Fix peaks to fill in gaps after removing anomalies
+    final_peak_time = fix_final_peaks(
+        peak_time_from_corr_rri_filtered,
+        orig_sig,
+        orig_sig_time,
+        orig_sampling_rate,
+        corrs,
+        corr_times,
+        sampling_rate,
+        fix_interpl_peaks_by_height,
+        fix_added_interpl_peaks_by_height,
+        fixpeaks_by_height_time_boundaries,
+        k_nearest_intervals,
+        n_nan_estimation_method,
+        interpolate_args,
+        min_bpm=min_bpm,
+        max_bpm=max_bpm,
+    )
+
+    if output_format == "only_final":
+        return final_peak_time
+    else:
+        return export_debug_info(
+            resampled_clean_sig,
+            resampled_clean_sig_time,
+            new_sampling_rate,
+            corrs,
+            corr_times,
+            peak_time_from_corr,
+            peak_time_from_corr_height_filtered,
+            peak_time_from_corr_rri_filtered,
+            final_peak_time,
+            debug_out_path=debug_out_path,
+        )
 
 
 def temp_hb_extract(
@@ -378,12 +566,9 @@ def matlab_hb_extract(
     else:
         exist_code_path_list = [p.parent for p in m_file_paths]
 
-    try:
-        import matlab.engine
-    except ImportError:
-        raise ImportError("Matlab engine is not installed.")
-
-    eng = matlab.engine.start_matlab()
+    eng = get_matlab()
+    # eng = matlab.engine.start_matlab()
+    import matlab.engine
 
     for path in exist_code_path_list:
         s = eng.genpath(str(path))
@@ -397,7 +582,7 @@ def matlab_hb_extract(
     string_eval = detector_func_name + "(inputAudio,fs,debug);"
     _, _, prediction, _, _, _ = eng.eval(string_eval, nargout=6)
 
-    eng.quit()
+    # eng.quit()
     peak_time = np.hstack(np.asarray(prediction))
     return peak_time
 
@@ -455,7 +640,15 @@ def hb_extract(
             method = "nk_elgendi"
         else:
             method = "matlab"
-    if "temp" in method:
+    if "no_temp" in method:
+        return no_temp_hb_extract(
+            sig=sig,
+            sig_time=sig_time,
+            sampling_rate=sampling_rate,
+            **get_func_kwargs(temp_hb_extract, **hb_extract_algo_kwargs)
+        )
+
+    elif "temp" in method:
         return temp_hb_extract(
             sig=sig,
             sig_time=sig_time,

@@ -233,9 +233,9 @@ def generate_template_from_signal(
     max_bpm : int, optional
         The maximum heart rate in beats per minute.
     temp_time_before_peak : float, optional
-        Time before peak for template extraction.
+        Seconds before peak to take for segment used for template extraction.
     temp_time_after_peak : float, optional
-        Time after peak for template extraction.
+        Seconds after peak to take for segment used for template extraction.
     use_rri_to_peak_time : bool, optional
         Whether to use RRI to peak time conversion. Default is False.
 

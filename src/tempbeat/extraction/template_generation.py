@@ -237,7 +237,7 @@ def generate_template_from_signal(
     temp_time_after_peak : float, optional
         Seconds after peak to take for segment used for template extraction.
     use_rri_to_peak_time : bool, optional
-        Whether to use RRI to peak time conversion. Default is False.
+        Whether to use RRI to peak time conversion. Default is True.
 
     Returns
     -------

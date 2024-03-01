@@ -98,3 +98,5 @@ class TestHbExtract:
             hb_extract_algo_kwargs={"output_format": "full"},
         )
         assert isinstance(output, tuple)
+        assert isinstance(output[1], dict)
+        assert "med_template" in output[1].keys()

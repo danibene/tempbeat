@@ -1,3 +1,4 @@
+import pytest
 from neurokit2 import data, ecg_process, signal_distort
 
 from tempbeat.evaluation.compare_bpm import get_bpm_mae_from_rri
@@ -11,6 +12,10 @@ class TestGetBPMMaeFromRRI:
     """
 
     @staticmethod
+    @pytest.mark.parametrize(
+        "unit,percentage",
+        [("bpm", False), ("bpm", True), ("rri", False), ("rri", True)],
+    )
     def test_get_bpm_mae_from_rri_with_same_signal() -> None:
         """
         Test get_bpm_mae_from_rri with two copies of the same signal.
@@ -34,6 +39,10 @@ class TestGetBPMMaeFromRRI:
         assert mae == 0
 
     @staticmethod
+    @pytest.mark.parametrize(
+        "unit,percentage",
+        [("bpm", False), ("bpm", True), ("rri", False), ("rri", True)],
+    )
     def test_get_bpm_mae_from_rri_with_distorted_signal() -> None:
         """
         Test get_bpm_mae_from_rri with a distorted signal.

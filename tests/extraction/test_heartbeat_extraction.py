@@ -78,3 +78,45 @@ class TestHbExtract:
         min_bpm = 40
         assert np.max(rri) < 60000 / min_bpm
         assert np.min(rri) > 60000 / max_bpm
+
+    @staticmethod
+    def test_hb_extract_hb_extract_algo_kwargs() -> None:
+        """
+        Test hb_extract with example ECG data and hb_extract_algo_kwargs.
+
+        The function should return a tuple.
+        """
+        sampling_rate = 100
+        data = nk.data("bio_resting_5min_100hz")
+        sig = data["ECG"]
+        sig_time = sampling_rate_to_sig_time(sig, sampling_rate)
+        output = hb_extract(
+            sig,
+            sig_time=sig_time,
+            sampling_rate=sampling_rate,
+            method="temp",
+            hb_extract_algo_kwargs={"output_format": "full"},
+        )
+        assert isinstance(output, tuple)
+        assert isinstance(output[1], dict)
+        assert "med_template" in output[1].keys()
+
+    @staticmethod
+    def test_hb_extract_hb_extract_algo_kwargs_empty() -> None:
+        """
+        Test hb_extract with example ECG data and empty hb_extract_algo_kwargs.
+
+        The function should return an np.ndarray.
+        """
+        sampling_rate = 100
+        data = nk.data("bio_resting_5min_100hz")
+        sig = data["ECG"]
+        sig_time = sampling_rate_to_sig_time(sig, sampling_rate)
+        output = hb_extract(
+            sig,
+            sig_time=sig_time,
+            sampling_rate=sampling_rate,
+            method="temp",
+            hb_extract_algo_kwargs={},
+        )
+        assert isinstance(output, np.ndarray)

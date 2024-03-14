@@ -196,16 +196,16 @@ def no_temp_hb_extract(
         return final_peak_time
     else:
         return export_debug_info(
-            resampled_clean_sig,
-            resampled_clean_sig_time,
-            new_sampling_rate,
-            corrs,
-            corr_times,
-            peak_time_from_corr,
-            peak_time_from_corr_height_filtered,
-            peak_time_from_corr_rri_filtered,
-            final_peak_time,
             debug_out_path=debug_out_path,
+            resampled_clean_sig=resampled_clean_sig,
+            resampled_clean_sig_time=resampled_clean_sig_time,
+            new_sampling_rate=new_sampling_rate,
+            corrs=corrs,
+            corr_times=corr_times,
+            peak_time_from_corr=peak_time_from_corr,
+            peak_time_from_corr_height_filtered=peak_time_from_corr_height_filtered,
+            peak_time_from_corr_rri_filtered=peak_time_from_corr_rri_filtered,
+            final_peak_time=final_peak_time,
         )
 
 
@@ -409,21 +409,25 @@ def temp_hb_extract(
         return final_peak_time
     else:
         return export_debug_info(
-            resampled_clean_sig,
-            resampled_clean_sig_time,
-            new_sampling_rate,
-            template_debug_out["height_min"],
-            template_debug_out["height_max"],
-            template_debug_out["potential_peak_time_for_temp"],
-            template_debug_out["peak_time_for_temp_confident"],
-            med_template,
-            corrs,
-            corr_times,
-            peak_time_from_corr,
-            peak_time_from_corr_height_filtered,
-            peak_time_from_corr_rri_filtered,
-            final_peak_time,
             debug_out_path=debug_out_path,
+            resampled_clean_sig=resampled_clean_sig,
+            resampled_clean_sig_time=resampled_clean_sig_time,
+            new_sampling_rate=new_sampling_rate,
+            template_height_min=template_debug_out["height_min"],
+            template_height_max=template_debug_out["height_max"],
+            potential_peak_time_for_temp=template_debug_out[
+                "potential_peak_time_for_temp"
+            ],
+            peak_time_for_temp_confident=template_debug_out[
+                "peak_time_for_temp_confident"
+            ],
+            med_template=med_template,
+            corrs=corrs,
+            corr_times=corr_times,
+            peak_time_from_corr=peak_time_from_corr,
+            peak_time_from_corr_height_filtered=peak_time_from_corr_height_filtered,
+            peak_time_from_corr_rri_filtered=peak_time_from_corr_rri_filtered,
+            final_peak_time=final_peak_time,
         )
 
 

@@ -1,3 +1,4 @@
+import pytest
 from neurokit2 import data, ecg_process, signal_distort
 
 from tempbeat.evaluation.compare_bpm import get_bpm_mae_from_rri
@@ -11,7 +12,11 @@ class TestGetBPMMaeFromRRI:
     """
 
     @staticmethod
-    def test_get_bpm_mae_from_rri_with_same_signal() -> None:
+    @pytest.mark.parametrize(
+        "unit,percentage",
+        [("bpm", False), ("bpm", True), ("rri", False), ("rri", True)],
+    )
+    def test_get_bpm_mae_from_rri_with_same_signal(unit, percentage) -> None:
         """
         Test get_bpm_mae_from_rri with two copies of the same signal.
 
@@ -30,11 +35,17 @@ class TestGetBPMMaeFromRRI:
             rri_b=rri_clean,
             rri_time_a=rri_time_clean,
             rri_time_b=rri_time_clean,
+            unit=unit,
+            percentage=percentage,
         )
         assert mae == 0
 
     @staticmethod
-    def test_get_bpm_mae_from_rri_with_distorted_signal() -> None:
+    @pytest.mark.parametrize(
+        "unit,percentage",
+        [("bpm", False), ("bpm", True), ("rri", False), ("rri", True)],
+    )
+    def test_get_bpm_mae_from_rri_with_distorted_signal(unit, percentage) -> None:
         """
         Test get_bpm_mae_from_rri with a distorted signal.
 
@@ -71,6 +82,8 @@ class TestGetBPMMaeFromRRI:
             rri_b=rri_distorted,
             rri_time_a=rri_time_clean,
             rri_time_b=rri_time_distored,
+            unit=unit,
+            percentage=percentage,
         )
         # Confirm that the R-R intervals extracted from distorted signal are different from the clean signal
         assert mae_clean_distorted > 0

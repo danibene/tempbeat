@@ -16,6 +16,7 @@ def get_bpm_mae_from_rri(
     subtract_cent: bool = False,
     cent_func: Callable = np.median,
     unit: str = "bpm",
+    percentage: bool = False,
 ) -> float:
     """
     Get the mean absolute error of BPM given two RRI arrays.
@@ -40,6 +41,8 @@ def get_bpm_mae_from_rri(
         The function used to compute the central tendancy. Default is np.median.
     unit : str, optional
         The unit of the result. Default is "bpm". Other options are "rri".
+    percentage : bool, optional
+        Whether to return the result as a percentage. Default is False.
     """
 
     # Interpolate the RRI arrays to the same x values
@@ -58,6 +61,10 @@ def get_bpm_mae_from_rri(
 
     # Compute the mean absolute error of the BPM
     mae = get_mae(rri_a, rri_b, subtract_cent=subtract_cent, cent_func=cent_func)
+
+    if percentage:
+        mae = mae / np.nanmean(rri_a) * 100
+
     return mae
 
 
@@ -70,6 +77,7 @@ def get_bpm_mae_from_peak_time(
     subtract_cent: bool = False,
     cent_func: Callable = np.median,
     unit: str = "bpm",
+    percentage: bool = False,
 ) -> float:
     """
     Get the mean absolute error of BPM given two peak time arrays.
@@ -117,6 +125,7 @@ def get_bpm_mae_from_peak_time(
         subtract_cent=subtract_cent,
         cent_func=cent_func,
         unit=unit,
+        percentage=percentage,
     )
 
     return mae

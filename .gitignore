@@ -56,3 +56,9 @@ MANIFEST
 # MATLAB files
 *.asv
 *.m
+
+#Outputs
+*.json
+*.png
+*.csv
+*.xlsx

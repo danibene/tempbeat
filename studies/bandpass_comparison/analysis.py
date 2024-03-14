@@ -58,7 +58,7 @@ def main() -> None:
         rows_bpm = []
         rows_rri_p = []
         rows_rri = []
-        
+
         row_peaks_list = []
         for dataset in datasets:
             dataset_path = root_path / dataset / "8k"
@@ -130,7 +130,7 @@ def main() -> None:
                         MAE_list_bpm = []
                         MAE_list_rri_p = []
                         MAE_list_rri = []
-                        
+
                         peaks_list = []
                         hb_extract_methods = ["no_temp", "temp", "matlab"]
                         colors = ["red", "blue", "orange"]
@@ -141,28 +141,28 @@ def main() -> None:
                                 sampling_rate=new_sampling_rate,
                                 method=hb_extract_method,
                             )
-                            
+
                             mae_clean_distorted_bpm_p = get_bpm_mae_from_peak_time(
                                 peak_time_a=clean_peak_time,
                                 peak_time_b=audio_peak_time,
                                 unit="bpm",
                                 percentage = True
                             )
-                            
+
                             mae_clean_distorted_rri_p = get_bpm_mae_from_peak_time(
                                 peak_time_a=clean_peak_time,
                                 peak_time_b=audio_peak_time,
                                 unit="rri",
                                 percentage = True
                             )
-                            
+
                             mae_clean_distorted_bpm = get_bpm_mae_from_peak_time(
                                 peak_time_a=clean_peak_time,
                                 peak_time_b=audio_peak_time,
                                 unit="bpm",
                                 percentage = False
                             )
-                            
+
                             mae_clean_distorted_rri = get_bpm_mae_from_peak_time(
                                 peak_time_a=clean_peak_time,
                                 peak_time_b=audio_peak_time,
@@ -236,7 +236,7 @@ def main() -> None:
                             "matlab MAE": MAE_list_bpm_p[2],
                             "matlab nbPeaks": len(peaks_list[2]),
                         }
-                        
+
                         row_bpm = {
                             "dataset": dataset,
                             "participant": p,
@@ -249,7 +249,7 @@ def main() -> None:
                             "matlab MAE": MAE_list_bpm[2],
                             "matlab nbPeaks": len(peaks_list[2]),
                         }
-                        
+
                         row_rri_p = {
                             "dataset": dataset,
                             "participant": p,
@@ -262,7 +262,7 @@ def main() -> None:
                             "matlab MAE": MAE_list_rri_p[2],
                             "matlab nbPeaks": len(peaks_list[2]),
                         }
-                        
+
                         row_rri = {
                             "dataset": dataset,
                             "participant": p,
@@ -297,13 +297,13 @@ def main() -> None:
 
         df_final = pd.DataFrame(rows_bpm_p)
         df_final.to_csv(export_dir / f"results_bpm_p_{minutes*60}.csv", index=False)
-        
+
         df_final = pd.DataFrame(rows_bpm)
         df_final.to_csv(export_dir / f"results_bpm_{minutes*60}.csv", index=False)
-        
+
         df_final = pd.DataFrame(rows_rri_p)
         df_final.to_csv(export_dir / f"results_rri_p_{minutes*60}.csv", index=False)
-        
+
         df_final = pd.DataFrame(rows_rri)
         df_final.to_csv(export_dir / f"results_rri_{minutes*60}.csv", index=False)
 

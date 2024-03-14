@@ -128,6 +128,6 @@ def get_bpm_mae_from_peak_time(
         percentage = percentage
     )
 
-    
+
 
     return mae

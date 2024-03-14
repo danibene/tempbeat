@@ -35,28 +35,28 @@ for metric in metrics:
     rows = []
     for test in tests:
         df = pd.read_csv(export_dir_root / test / f"results_{metric}_{test}.csv")
-    
+
         if drop_bad:
             merged_table = pd.merge(
                 df, remove_table, on=["dataset", "participant"], how="left", indicator=True
             )
-    
+
             df = merged_table[merged_table["_merge"] == "left_only"].drop(columns="_merge")
-    
+
         mean_values = df[columns_to_analyze].mean().to_numpy()
         std_values = df[columns_to_analyze].std().to_numpy()
-    
+
         row = {}
-    
+
         row["length"] = int(float(test))
-    
+
         for c in range(len(columns_to_analyze)):
             row[f"{columns_to_analyze[c]} mean"] = mean_values[c]
             row[f"{columns_to_analyze[c]} std"] = std_values[c]
-    
+
         rows.append(row)
-    
+
     df_final = pd.DataFrame(rows)
     df_final = df_final.sort_values(by="length")
-    
+
     df_final.to_csv(export_dir_root / f"results_{metric}_summary.csv", index=False)

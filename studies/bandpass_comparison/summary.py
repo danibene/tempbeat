@@ -28,7 +28,7 @@ remove_table = pd.DataFrame(remove_rows)
 
 drop_bad = False
 
-metrics = ['bpm_p','bpm','rri_p','rri']
+metrics = ["bpm_p", "bpm", "rri_p", "rri"]
 columns_to_analyze = ["no_temp MAE", "temp MAE", "matlab MAE"]
 
 for metric in metrics:
@@ -38,10 +38,16 @@ for metric in metrics:
 
         if drop_bad:
             merged_table = pd.merge(
-                df, remove_table, on=["dataset", "participant"], how="left", indicator=True
+                df,
+                remove_table,
+                on=["dataset", "participant"],
+                how="left",
+                indicator=True,
             )
 
-            df = merged_table[merged_table["_merge"] == "left_only"].drop(columns="_merge")
+            df = merged_table[merged_table["_merge"] == "left_only"].drop(
+                columns="_merge"
+            )
 
         mean_values = df[columns_to_analyze].mean().to_numpy()
         std_values = df[columns_to_analyze].std().to_numpy()

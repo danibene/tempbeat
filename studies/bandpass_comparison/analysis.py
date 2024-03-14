@@ -2,16 +2,13 @@
 
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import scipy
-import seaborn as sns
 import soundfile as sf
 
 from tempbeat.evaluation.compare_bpm import get_bpm_mae_from_peak_time
 from tempbeat.extraction.heartbeat_extraction import hb_extract
 from tempbeat.extraction.interval_conversion import peak_time_to_rri
-from tempbeat.utils.interpolation import interpolate_to_same_x
 from tempbeat.utils.matlab_utils import quit_matlab, set_matlab
 from tempbeat.utils.timestamp import sampling_rate_to_sig_time
 
@@ -36,7 +33,7 @@ def main() -> None:
     # This is how you can use Neurokit2 to process ECG
 
     set_matlab()
-    print('Matlab Started')
+    print("Matlab Started")
     root_path = Path("Z:/Shared/Documents/RD/RD2/_AudioRD/datasets/Biosignals")
     datasets = ["P5M5_1", "P5M5_2", "P5M5_3"]
 
@@ -133,7 +130,6 @@ def main() -> None:
 
                         peaks_list = []
                         hb_extract_methods = ["no_temp", "temp", "matlab"]
-                        colors = ["red", "blue", "orange"]
                         for hb_extract_method in hb_extract_methods:
                             audio_peak_time = hb_extract(
                                 resampled_clean_sig,
@@ -146,28 +142,28 @@ def main() -> None:
                                 peak_time_a=clean_peak_time,
                                 peak_time_b=audio_peak_time,
                                 unit="bpm",
-                                percentage = True
+                                percentage=True,
                             )
 
                             mae_clean_distorted_rri_p = get_bpm_mae_from_peak_time(
                                 peak_time_a=clean_peak_time,
                                 peak_time_b=audio_peak_time,
                                 unit="rri",
-                                percentage = True
+                                percentage=True,
                             )
 
                             mae_clean_distorted_bpm = get_bpm_mae_from_peak_time(
                                 peak_time_a=clean_peak_time,
                                 peak_time_b=audio_peak_time,
                                 unit="bpm",
-                                percentage = False
+                                percentage=False,
                             )
 
                             mae_clean_distorted_rri = get_bpm_mae_from_peak_time(
                                 peak_time_a=clean_peak_time,
                                 peak_time_b=audio_peak_time,
                                 unit="rri",
-                                percentage = False
+                                percentage=False,
                             )
 
                             peaks_list.append(audio_peak_time)
@@ -179,7 +175,6 @@ def main() -> None:
                             MAE_list_rri_p.append(mae_clean_distorted_rri_p)
                             MAE_list_rri.append(mae_clean_distorted_rri)
 
-                        interpolation_rate = 2
                         min_bpm = 40
                         max_bpm = 200
                         min_rri = 60000 / max_bpm

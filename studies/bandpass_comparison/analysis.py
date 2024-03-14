@@ -131,12 +131,22 @@ def main() -> None:
                         peaks_list = []
                         hb_extract_methods = ["no_temp", "temp", "matlab"]
                         for hb_extract_method in hb_extract_methods:
-                            audio_peak_time = hb_extract(
+                            if hb_extract_method == "temp":
+                                hb_extract_kwargs = {"output_format": "full"}
+                            else:
+                                hb_extract_kwargs = {}
+                            output = hb_extract(
                                 resampled_clean_sig,
                                 sig_time=resampled_clean_sig_time,
                                 sampling_rate=new_sampling_rate,
                                 method=hb_extract_method,
+                                hb_extract_algo_kwargs=hb_extract_kwargs,
                             )
+                            if isinstance(output, tuple):
+                                audio_peak_time = output[0]
+                                # med_template = output[1]["med_template"]
+                            else:
+                                audio_peak_time = output
 
                             mae_clean_distorted_bpm_p = get_bpm_mae_from_peak_time(
                                 peak_time_a=clean_peak_time,

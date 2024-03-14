@@ -288,6 +288,7 @@ def generate_template_from_signal(
         temp_time_after_peak,
     )
     return med_template, {
+        "potential_peak_time_for_temp": potential_peak_time_for_temp,
         "height_min": height_min,
         "height_max": height_max,
         "peak_time_for_temp_confident": peak_time_for_temp_confident,

@@ -180,9 +180,9 @@ def main() -> None:
 
                             # print(hb_extract_method)
                             # print(mae_clean_distorted)
-                            MAE_list_bpm_p.append(mae_clean_distorted_bpm_p)
+                            MAE_list_bpm_p.append(mae_clean_distorted_bpm_p / 100)
                             MAE_list_bpm.append(mae_clean_distorted_bpm)
-                            MAE_list_rri_p.append(mae_clean_distorted_rri_p)
+                            MAE_list_rri_p.append(mae_clean_distorted_rri_p / 100)
                             MAE_list_rri.append(mae_clean_distorted_rri)
 
                         min_bpm = 40

@@ -77,6 +77,7 @@ def get_bpm_mae_from_peak_time(
     subtract_cent: bool = False,
     cent_func: Callable = np.median,
     unit: str = "bpm",
+    percentage: bool = False,
 ) -> float:
     """
     Get the mean absolute error of BPM given two peak time arrays.
@@ -124,6 +125,9 @@ def get_bpm_mae_from_peak_time(
         subtract_cent=subtract_cent,
         cent_func=cent_func,
         unit=unit,
+        percentage = percentage
     )
+
+    
 
     return mae

@@ -1,3 +1,4 @@
+from typing import Optional
 from warnings import warn
 
 import numpy as np
@@ -11,17 +12,17 @@ from tempbeat.utils.misc_utils import argtop_k
 
 
 def signal_fixpeaks(
-    peaks,
-    sampling_rate=1000,
-    interval_min=None,
-    interval_max=None,
-    relative_interval_min=None,
-    relative_interval_max=None,
-    robust=False,
-    method="neurokit",
-    k_nearest_intervals=None,
-    n_nan_estimation_method="floor",
-    interpolate_args={"method": "linear"},
+    peaks: np.ndarray,
+    sampling_rate: int = 1000,
+    interval_min: Optional[float] = None,
+    interval_max: Optional[float] = None,
+    relative_interval_min: Optional[float] = None,
+    relative_interval_max: Optional[float] = None,
+    robust: bool = False,
+    method: str = "neurokit",
+    k_nearest_intervals: Optional[int] = None,
+    n_nan_estimation_method: str = "floor",
+    interpolate_args: dict = {"method": "linear"},
     **kwargs,
 ):
     """**Correct Erroneous Peak Placements**
@@ -139,16 +140,16 @@ def signal_fixpeaks(
 # Methods
 # =============================================================================
 def _signal_fixpeaks_neurokit(
-    peaks,
-    sampling_rate=1000,
-    interval_min=None,
-    interval_max=None,
-    relative_interval_min=None,
-    relative_interval_max=None,
-    robust=False,
-    k_nearest_intervals=None,
-    n_nan_estimation_method="floor",
-    interpolate_args={"method": "linear"},
+    peaks: np.ndarray,
+    sampling_rate: int = 1000,
+    interval_min: Optional[float] = None,
+    interval_max: Optional[float] = None,
+    relative_interval_min: Optional[float] = None,
+    relative_interval_max: Optional[float] = None,
+    robust: bool = False,
+    k_nearest_intervals: Optional[int] = None,
+    n_nan_estimation_method: str = "floor",
+    interpolate_args: dict = {"method": "linear"},
 ):
     """NeuroKit method."""
 
@@ -182,11 +183,11 @@ def _signal_fixpeaks_neurokit(
 # NeuroKit
 # =============================================================================
 def _remove_small(
-    peaks,
-    sampling_rate=1000,
-    interval_min=None,
-    relative_interval_min=None,
-    robust=False,
+    peaks: np.ndarray,
+    sampling_rate: int = 1000,
+    interval_min: Optional[float] = None,
+    relative_interval_min: Optional[float] = None,
+    robust: bool = False,
 ):
     if interval_min is None and relative_interval_min is None:
         return peaks
@@ -204,14 +205,14 @@ def _remove_small(
 
 
 def _interpolate_big(
-    peaks,
-    sampling_rate=1000,
-    interval_max=None,
-    relative_interval_max=None,
-    robust=False,
-    k_nearest_intervals=None,
-    n_nan_estimation_method="floor",
-    interpolate_args={"method": "linear"},
+    peaks: np.ndarray,
+    sampling_rate: int = 1000,
+    interval_max: Optional[float] = None,
+    relative_interval_max: Optional[float] = None,
+    robust: bool = False,
+    k_nearest_intervals: Optional[int] = None,
+    n_nan_estimation_method: str = "floor",
+    interpolate_args: dict = {"method": "linear"},
 ):
     if interval_max is None and relative_interval_max is None:
         return peaks
@@ -244,12 +245,12 @@ def _interpolate_big(
 
 
 def _interpolate_missing(
-    peaks,
-    interval,
-    interval_max,
-    k_nearest_intervals=None,
-    n_nan_estimation_method="floor",
-    interpolate_args={"method": "linear"},
+    peaks: np.ndarray,
+    interval: np.ndarray,
+    interval_max: float,
+    k_nearest_intervals: Optional[int] = None,
+    n_nan_estimation_method: str = "floor",
+    interpolate_args: dict = {"method": "linear"},
 ):
     outliers = interval > interval_max
     outliers_loc = np.where(outliers)[0]

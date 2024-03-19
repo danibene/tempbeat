@@ -50,7 +50,7 @@ def no_temp_hb_extract(
     fixpeaks_by_height_time_boundaries: Optional[dict] = None,
     move_average_rri_window: int = 3,
     output_format: str = "only_final",
-    debug_out_path: str = None,
+    debug_out_path: Optional[str] = None,
 ) -> np.ndarray:
     """
     Template-based heartbeat extraction.
@@ -234,10 +234,10 @@ def temp_hb_extract(
     interpolate_args: dict = {"method": "akima"},
     temp_time_before_peak: float = 0.3,
     temp_time_after_peak: float = 0.3,
-    fixpeaks_by_height_time_boundaries: float = None,
+    fixpeaks_by_height_time_boundaries: Optional[dict] = None,
     move_average_rri_window: int = 3,
     output_format: str = "only_final",
-    debug_out_path: str = None,
+    debug_out_path: Optional[str] = None,
 ) -> np.ndarray:
     """
     Template-based heartbeat extraction.
@@ -292,7 +292,7 @@ def temp_hb_extract(
         Time before peak for template extraction.
     temp_time_after_peak : float, optional
         Time after peak for template extraction.
-    fixpeaks_by_height_time_boundaries : float, optional
+    fixpeaks_by_height_time_boundaries : dict, optional
         Time boundaries for fixing peaks by height.
     move_average_rri_window : int, optional
         Window size for moving average of RRI.
@@ -490,8 +490,8 @@ def _temp_hb_extract_extract_potential_peaks_from_correlation(
     sampling_rate: int,
     corr_peak_extraction_method: str,
     fix_corr_peaks_by_height: bool,
-    fixpeaks_by_height_time_boundaries: dict,
-) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray, np.ndarray]]:
+    fixpeaks_by_height_time_boundaries: Optional[dict],
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Extract potential peaks from the correlation signal.
 
@@ -507,7 +507,7 @@ def _temp_hb_extract_extract_potential_peaks_from_correlation(
         Peak extraction method used for correlation signal.
     fix_corr_peaks_by_height : bool
         Whether to fix correlated peaks by height.
-    fixpeaks_by_height_time_boundaries : dict
+    fixpeaks_by_height_time_boundaries : Optional[dict]
         Time boundaries for fixing peaks by height.
 
     Returns

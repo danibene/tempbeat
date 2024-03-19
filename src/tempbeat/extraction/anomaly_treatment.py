@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 import neurokit2 as nk
 import numpy as np
@@ -15,7 +15,7 @@ def fixpeaks_by_height(
     sig_info: dict = None,
     clean_sig_info: dict = None,
     sig_name: str = "zephyr_ecg",
-    time_boundaries: dict = None,
+    time_boundaries: Optional[dict] = None,
 ) -> np.ndarray:
     """
     Fix detected peaks based on their heights.
@@ -205,7 +205,7 @@ def fix_final_peaks(
     sampling_rate: int,
     fix_interpl_peaks_by_height: bool,
     fix_added_interpl_peaks_by_height: bool,
-    fixpeaks_by_height_time_boundaries: float,
+    fixpeaks_by_height_time_boundaries: Optional[dict],
     k_nearest_intervals: int,
     n_nan_estimation_method: str,
     interpolate_args: dict,
@@ -235,7 +235,7 @@ def fix_final_peaks(
         Whether to fix interpolated peaks by height.
     fix_added_interpl_peaks_by_height : bool
         Whether to fix added interpolated peaks by height.
-    fixpeaks_by_height_time_boundaries : float
+    fixpeaks_by_height_time_boundaries : Optional[dict]
         Time boundaries for fixing peaks by height.
     k_nearest_intervals : int
         Number of nearest intervals for interpolation.

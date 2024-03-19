@@ -349,7 +349,7 @@ def drop_missing(
 
 
 def export_debug_info(
-    debug_out_path: str = None, final_output_name="final_peak_time", **kwargs
+    debug_out_path: Optional[str] = None, final_output_name="final_peak_time", **kwargs
 ):
     """
     Export debug information.

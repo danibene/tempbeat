@@ -1,4 +1,5 @@
 import numpy as np
+from pytest import WarningsRecorder
 
 from tempbeat.utils.interpolation import interpolate_nonuniform
 from tempbeat.utils.timestamp import (
@@ -153,7 +154,7 @@ class TestSigTimeToSamplingRate:
         assert result == expected
 
     @staticmethod
-    def test_sig_time_to_sampling_rate_check_uniform(recwarn) -> None:
+    def test_sig_time_to_sampling_rate_check_uniform(recwarn: WarningsRecorder) -> None:
         """
         Test sig_time_to_sampling_rate with check_uniform=True.
 
@@ -167,7 +168,9 @@ class TestSigTimeToSamplingRate:
         assert len(recwarn) == 1
 
     @staticmethod
-    def test_sig_time_to_sampling_rate_check_uniform_false(recwarn) -> None:
+    def test_sig_time_to_sampling_rate_check_uniform_false(
+        recwarn: WarningsRecorder,
+    ) -> None:
         """
         Test sig_time_to_sampling_rate with check_uniform=False.
 
@@ -181,7 +184,9 @@ class TestSigTimeToSamplingRate:
         assert len(recwarn) == 0
 
     @staticmethod
-    def test_sig_time_to_sampling_rate_check_uniform_decimals2(recwarn) -> None:
+    def test_sig_time_to_sampling_rate_check_uniform_decimals2(
+        recwarn: WarningsRecorder,
+    ) -> None:
         """
         Test sig_time_to_sampling_rate with check_uniform=True and decimals=2.
 
@@ -195,7 +200,9 @@ class TestSigTimeToSamplingRate:
         assert len(recwarn) == 0
 
     @staticmethod
-    def test_sig_time_to_sampling_rate_check_uniform_decimals5(recwarn) -> None:
+    def test_sig_time_to_sampling_rate_check_uniform_decimals5(
+        recwarn: WarningsRecorder,
+    ) -> None:
         """
         Test sig_time_to_sampling_rate with check_uniform=True and decimals=5.
 

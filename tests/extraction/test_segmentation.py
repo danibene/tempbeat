@@ -22,6 +22,7 @@ class TestFindLocalHbPeaks:
         _, rpeaks = ecg_process(sig, sampling_rate=sampling_rate)
         peaks = rpeaks["ECG_R_Peaks"]
         peak_time = samp_to_timestamp(peaks, sampling_rate=sampling_rate)
+        assert isinstance(peak_time, np.ndarray)
         rng = np.random.default_rng(42)
         noisy_peak_time = peak_time + rng.uniform(-0.1, 0.1, size=peak_time.shape)
         time_before_peak = 0.2

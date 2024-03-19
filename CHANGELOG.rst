@@ -9,7 +9,7 @@ Unreleased
 
 Please see all `Unreleased Changes`_ for more information.
 
-0.0.1 - 2024-03-18
+0.0.1 - 2024-03-19
 --------------------
 
 Added

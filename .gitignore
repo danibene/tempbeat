@@ -52,3 +52,13 @@ MANIFEST
 .venv*/
 .conda*/
 .python-version
+
+# MATLAB files
+*.asv
+*.m
+
+#Outputs
+*.json
+*.png
+*.csv
+*.xlsx

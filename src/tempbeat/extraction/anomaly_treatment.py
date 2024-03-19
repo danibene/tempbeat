@@ -12,8 +12,8 @@ from .segmentation import find_local_hb_peaks
 
 def fixpeaks_by_height(
     peak_time: np.ndarray,
-    sig_info: dict = None,
-    clean_sig_info: dict = None,
+    sig_info: dict,
+    clean_sig_info: Optional[dict] = None,
     sig_name: str = "zephyr_ecg",
     time_boundaries: Optional[dict] = None,
 ) -> np.ndarray:
@@ -24,7 +24,7 @@ def fixpeaks_by_height(
     ----------
     peak_time : np.ndarray
         Array of peak times to be fixed.
-    sig_info : dict, optional
+    sig_info : dict
         Information about the signal containing the peaks.
     clean_sig_info : dict, optional
         Information about the cleaned signal.
@@ -101,7 +101,7 @@ def remove_anomalies_from_corr_peaks(
     max_bpm: int = 200,
     max_time_after_last_peak: int = 5,
     use_rri_to_peak_time: bool = True,
-    move_average_rri_window: int = None,
+    move_average_rri_window: Optional[int] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Handle anomalies in the peak times extracted from the correlation signal.
@@ -282,6 +282,7 @@ def fix_final_peaks(
     elif fix_added_interpl_peaks_by_height:
         dec = 1
         fixed_peak_time = samp_to_timestamp(fixed_new_peaks, sig_time=orig_sig_time)
+        assert isinstance(fixed_peak_time, np.ndarray)
         added_peak_time = np.array(
             [
                 peak

@@ -65,7 +65,7 @@ def find_local_hb_peaks(
     check_height_outlier: bool = False,
     k_sample_ratio: float = 0.5,
     use_prominence: bool = False,
-    **kwargs
+    **kwargs: Optional[dict],
 ) -> np.ndarray:
     """
     Find local peaks in a cardiac signal around specified peak times.
@@ -111,7 +111,7 @@ def find_local_hb_peaks(
             sig=sig,
             sig_time=sig_time,
             sampling_rate=sampling_rate,
-            **get_func_kwargs(get_local_hb_sig, **kwargs)
+            **get_func_kwargs(get_local_hb_sig, **kwargs),
         )
 
         if check_height_outlier:

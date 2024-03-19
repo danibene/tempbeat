@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from pathlib import Path
+from typing import Union
 
 import pandas as pd
 import scipy
@@ -13,7 +14,9 @@ from tempbeat.utils.matlab_utils import quit_matlab, set_matlab
 from tempbeat.utils.timestamp import sampling_rate_to_sig_time
 
 
-def read_audio_section(filename, start_time, stop_time):
+def read_audio_section(
+    filename: Union[str, Path], start_time: float, stop_time: float
+) -> tuple:
     track = sf.SoundFile(filename)
 
     can_seek = track.seekable()  # True

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List
 
 import pandas as pd
 
@@ -6,7 +7,7 @@ export_dir_root = Path("./output_2024-03-14")
 
 tests = [folder.name for folder in export_dir_root.iterdir() if folder.is_dir()]
 
-remove_rows = [
+remove_rows: List[dict] = [
     # {"dataset": "P5M5_1", "participant": "P17"},
     # {"dataset": "P5M5_1", "participant": "P18"},
     # {"dataset": "P5M5_1", "participant": "P24"},

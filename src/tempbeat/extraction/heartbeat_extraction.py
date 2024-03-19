@@ -47,7 +47,7 @@ def no_temp_hb_extract(
     interpolate_args: dict = {"method": "akima"},
     temp_time_before_peak: float = 0.3,
     temp_time_after_peak: float = 0.3,
-    fixpeaks_by_height_time_boundaries: float = None,
+    fixpeaks_by_height_time_boundaries: Optional[dict] = None,
     move_average_rri_window: int = 3,
     output_format: str = "only_final",
     debug_out_path: str = None,
@@ -105,7 +105,7 @@ def no_temp_hb_extract(
         Time before peak for template extraction.
     temp_time_after_peak : float, optional
         Time after peak for template extraction.
-    fixpeaks_by_height_time_boundaries : float, optional
+    fixpeaks_by_height_time_boundaries : dict, optional
         Time boundaries for fixing peaks by height.
     move_average_rri_window : int, optional
         Window size for moving average of RRI.
@@ -490,8 +490,8 @@ def _temp_hb_extract_extract_potential_peaks_from_correlation(
     sampling_rate: int,
     corr_peak_extraction_method: str,
     fix_corr_peaks_by_height: bool,
-    fixpeaks_by_height_time_boundaries: float,
-) -> Tuple[np.ndarray, np.ndarray]:
+    fixpeaks_by_height_time_boundaries: dict,
+) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray, np.ndarray]]:
     """
     Extract potential peaks from the correlation signal.
 
@@ -507,7 +507,7 @@ def _temp_hb_extract_extract_potential_peaks_from_correlation(
         Peak extraction method used for correlation signal.
     fix_corr_peaks_by_height : bool
         Whether to fix correlated peaks by height.
-    fixpeaks_by_height_time_boundaries : float
+    fixpeaks_by_height_time_boundaries : dict
         Time boundaries for fixing peaks by height.
 
     Returns
@@ -558,7 +558,7 @@ def matlab_hb_extract(
     sampling_rate: int = 1000,
     detector_func_name: str = "FilterHBDetection",
     code_path: Optional[Union[str, Path]] = None,
-):
+) -> np.ndarray:
     if code_path is None:
         code_path = Path(__file__).parent.parent.parent / "matlab"
 

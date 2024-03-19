@@ -8,7 +8,7 @@ def get_error(
     b: np.ndarray,
     subtract_cent: bool = False,
     cent_func: Callable = np.median,
-):
+) -> np.ndarray:
     """
     Get the error between two arrays.
 

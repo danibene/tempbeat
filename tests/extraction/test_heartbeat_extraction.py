@@ -59,7 +59,7 @@ class TestTempHbExtract:
 class TestHbExtract:
     @staticmethod
     @pytest.mark.parametrize("method", ["nk_neurokit", "temp"])
-    def test_hb_extract(method) -> None:
+    def test_hb_extract(method: str) -> None:
         """
         Test hb_extract with example ECG data.
 

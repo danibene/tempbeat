@@ -23,6 +23,7 @@ References:
 import argparse
 import logging
 import sys
+
 import numpy as np
 import scipy.io
 
@@ -42,6 +43,7 @@ _logger = logging.getLogger(__name__)
 # Python scripts/interactive interpreter, e.g. via
 # `from tempbeat.skeleton import fib`,
 # when using this Python module as a library.
+
 
 def extract_peak_times_from_wav(wav_file: str, method: str = "temp") -> np.ndarray:
     """
@@ -63,11 +65,14 @@ def extract_peak_times_from_wav(wav_file: str, method: str = "temp") -> np.ndarr
     """
     sampling_rate, sig = scipy.io.wavfile.read(wav_file)
     sig_time = sampling_rate_to_sig_time(sig, sampling_rate)
-    peak_time = hb_extract(sig, sig_time=sig_time, sampling_rate=sampling_rate, method=method)
+    peak_time = hb_extract(
+        sig, sig_time=sig_time, sampling_rate=sampling_rate, method=method
+    )
     # export to csv
     csv_file = str(wav_file).replace(".wav", "_peak_time.csv")
     np.savetxt(csv_file, peak_time, delimiter=",")
     print(f"Peak times saved to {csv_file}")
+
 
 # ---- CLI ----
 # The functions defined in this section are wrappers around the main Python

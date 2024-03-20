@@ -1,16 +1,18 @@
 from pathlib import Path
+
+import numpy as np
 import pytest
+import scipy
+from neurokit2 import data
+from neurokit2.signal import signal_distort
 from pytest import TempPathFactory
 
 from tempbeat.skeleton import extract_peak_times_from_wav, main
-from neurokit2.signal import signal_distort
-from neurokit2 import data
-import scipy
-import numpy as np
 
 __author__ = "danibene"
 __copyright__ = "danibene"
 __license__ = "MIT"
+
 
 # PyTest fixture of wav file
 @pytest.fixture
@@ -36,6 +38,7 @@ def wav_file(tmp_path_factory: TempPathFactory):
     scipy.io.wavfile.write(wav_path, sampling_rate, pretend_audio)
 
     return wav_path
+
 
 def test_extract_peak_times_from_wav(wav_file):
     """Test extract_peak_times_from_wav"""

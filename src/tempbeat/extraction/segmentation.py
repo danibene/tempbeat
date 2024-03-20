@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import neurokit2 as nk
 import numpy as np
@@ -65,7 +65,7 @@ def find_local_hb_peaks(
     check_height_outlier: bool = False,
     k_sample_ratio: float = 0.5,
     use_prominence: bool = False,
-    **kwargs: Optional[dict],
+    **kwargs: Any,
 ) -> np.ndarray:
     """
     Find local peaks in a cardiac signal around specified peak times.

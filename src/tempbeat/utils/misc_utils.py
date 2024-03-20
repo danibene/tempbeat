@@ -350,7 +350,7 @@ def drop_missing(
 
 def export_debug_info(
     debug_out_path: Optional[str] = None,
-    final_output_name="final_peak_time",
+    final_output_name: str = "final_peak_time",
     **kwargs: Any
 ) -> Union[Dict[str, Any], Any]:
     """

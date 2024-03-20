@@ -42,7 +42,7 @@ class TestGetFuncKwargs:
         The function should correctly extract keyword arguments from function_with_defaults.
         """
         kwargs = {"a": 1, "b": 2, "c": 3, "d": 4}
-        result = get_func_kwargs(self.function_with_defaults, **kwargs)
+        result = get_func_kwargs(self.function_with_defaults, exclude_keys=[], **kwargs)
         assert result == {"a": 1, "b": 2, "c": 3}
 
     def test_exclude_keys(self) -> None:
@@ -65,7 +65,7 @@ class TestGetFuncKwargs:
         The function should correctly handle a function with default parameter values.
         """
         kwargs = {"a": 1, "b": 2, "c": 3, "d": 4}
-        result = get_func_kwargs(self.function_with_defaults, **kwargs)
+        result = get_func_kwargs(self.function_with_defaults, exclude_keys=[], **kwargs)
         assert result == {"a": 1, "b": 2, "c": 3}
 
     def test_function_with_defaults_and_exclude_keys(self) -> None:

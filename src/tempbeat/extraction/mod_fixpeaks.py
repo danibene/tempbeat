@@ -24,7 +24,7 @@ def signal_fixpeaks(
     n_nan_estimation_method: str = "floor",
     interpolate_args: dict = {"method": "linear"},
     **kwargs,
-):
+) -> np.ndarray:
     """**Correct Erroneous Peak Placements**
     Identify and correct erroneous peak placements based on outliers in peak-to-peak differences
     (period).
@@ -150,7 +150,7 @@ def _signal_fixpeaks_neurokit(
     k_nearest_intervals: Optional[int] = None,
     n_nan_estimation_method: str = "floor",
     interpolate_args: dict = {"method": "linear"},
-):
+) -> np.ndarray:
     """NeuroKit method."""
 
     peaks_clean = _remove_small(
@@ -188,7 +188,7 @@ def _remove_small(
     interval_min: Optional[float] = None,
     relative_interval_min: Optional[float] = None,
     robust: bool = False,
-):
+) -> np.ndarray:
     if interval_min is None and relative_interval_min is None:
         return peaks
     if interval_min is not None:
@@ -213,7 +213,7 @@ def _interpolate_big(
     k_nearest_intervals: Optional[int] = None,
     n_nan_estimation_method: str = "floor",
     interpolate_args: dict = {"method": "linear"},
-):
+) -> np.ndarray:
     if interval_max is None and relative_interval_max is None:
         return peaks
     if interval_max is not None:
@@ -251,7 +251,7 @@ def _interpolate_missing(
     k_nearest_intervals: Optional[int] = None,
     n_nan_estimation_method: str = "floor",
     interpolate_args: dict = {"method": "linear"},
-):
+) -> np.ndarray:
     outliers = interval > interval_max
     outliers_loc = np.where(outliers)[0]
 

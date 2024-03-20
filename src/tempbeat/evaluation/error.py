@@ -42,7 +42,7 @@ def get_mae(
     b: np.ndarray,
     subtract_cent: bool = False,
     cent_func: Callable = np.median,
-):
+) -> float:
     """
     Get the mean absolute error between two arrays.
 

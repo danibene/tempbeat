@@ -13,7 +13,6 @@ __author__ = "danibene"
 __copyright__ = "danibene"
 __license__ = "MIT"
 
-
 # PyTest fixture of wav file
 @pytest.fixture
 def wav_file(tmp_path_factory: TempPathFactory):
@@ -38,7 +37,6 @@ def wav_file(tmp_path_factory: TempPathFactory):
     scipy.io.wavfile.write(wav_path, sampling_rate, pretend_audio)
 
     return wav_path
-
 
 def test_extract_peak_times_from_wav(wav_file):
     """Test extract_peak_times_from_wav"""

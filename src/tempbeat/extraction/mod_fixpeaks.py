@@ -23,7 +23,6 @@ def signal_fixpeaks(
     k_nearest_intervals: Optional[int] = None,
     n_nan_estimation_method: str = "floor",
     interpolate_args: dict = {"method": "linear"},
-    **kwargs,
 ) -> np.ndarray:
     """**Correct Erroneous Peak Placements**
     Identify and correct erroneous peak placements based on outliers in peak-to-peak differences

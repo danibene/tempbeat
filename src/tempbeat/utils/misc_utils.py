@@ -8,7 +8,7 @@ import numpy as np
 
 
 def get_func_kwargs(
-    func: Callable, exclude_keys: List[str] = [], **kwargs
+    func: Callable, exclude_keys: List[str] = [], **kwargs: Any
 ) -> Dict[str, Any]:
     """
     Get keyword arguments relevant to a function.
@@ -43,7 +43,7 @@ def get_func_kwargs(
     return func_kwargs
 
 
-def argtop_k(a: Union[List[Any], np.ndarray], k: int = 1, **kwargs) -> np.ndarray:
+def argtop_k(a: Union[List[Any], np.ndarray], k: int = 1, **kwargs: Any) -> np.ndarray:
     """
     Return the indices of the top k elements in an array.
 
@@ -74,11 +74,11 @@ def argtop_k(a: Union[List[Any], np.ndarray], k: int = 1, **kwargs) -> np.ndarra
     if k > len(a):
         k = len(a)
 
-    return a.argsort()[-k:][::-1]
+    return np.array(a).argsort()[-k:][::-1]
 
 
 def top_k(
-    a: Union[List[Any], np.ndarray], k: int = 1, **kwargs
+    a: Union[List[Any], np.ndarray], k: int = 1, **kwargs: Any
 ) -> Union[List[Any], np.ndarray]:
     """
     Return the top k elements from the input array.
@@ -209,7 +209,7 @@ def write_dict_to_json(
     Path(json_path).resolve().parent.mkdir(parents=True, exist_ok=True)
 
     if not Path(json_path).suffix == ".json":
-        json_path = Path(json_path + ".json")
+        json_path = str(Path(str(json_path) + ".json"))
 
     if not Path(json_path).is_file() or rewrite:
         with open(str(json_path), "w") as json_file:
@@ -240,7 +240,7 @@ def a_moving_average(y: np.ndarray, N: int = 5) -> np.ndarray:
 
 
 def roll_func(
-    x: np.ndarray, window: int, func: callable, func_args: dict = {}
+    x: np.ndarray, window: int, func: Callable, func_args: dict = {}
 ) -> np.ndarray:
     """
     Apply a rolling function to the input array.
@@ -272,7 +272,7 @@ def scale_and_clip_to_max_one(
     min_value: float = 0,
     replace_min_value: float = 0,
     max_value: float = np.inf,
-    replace_max_value: float = None,
+    replace_max_value: Optional[float] = None,
     div_by_given_max: bool = True,
 ) -> np.ndarray:
     """
@@ -349,8 +349,10 @@ def drop_missing(
 
 
 def export_debug_info(
-    debug_out_path: Optional[str] = None, final_output_name="final_peak_time", **kwargs
-):
+    debug_out_path: Optional[str] = None,
+    final_output_name="final_peak_time",
+    **kwargs: Any
+) -> Union[Dict[str, Any], Any]:
     """
     Export debug information.
 

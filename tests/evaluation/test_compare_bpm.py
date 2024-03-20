@@ -16,7 +16,7 @@ class TestGetBPMMaeFromRRI:
         "unit,percentage",
         [("bpm", False), ("bpm", True), ("rri", False), ("rri", True)],
     )
-    def test_get_bpm_mae_from_rri_with_same_signal(unit, percentage) -> None:
+    def test_get_bpm_mae_from_rri_with_same_signal(unit: str, percentage: bool) -> None:
         """
         Test get_bpm_mae_from_rri with two copies of the same signal.
 
@@ -45,7 +45,9 @@ class TestGetBPMMaeFromRRI:
         "unit,percentage",
         [("bpm", False), ("bpm", True), ("rri", False), ("rri", True)],
     )
-    def test_get_bpm_mae_from_rri_with_distorted_signal(unit, percentage) -> None:
+    def test_get_bpm_mae_from_rri_with_distorted_signal(
+        unit: str, percentage: bool
+    ) -> None:
         """
         Test get_bpm_mae_from_rri with a distorted signal.
 

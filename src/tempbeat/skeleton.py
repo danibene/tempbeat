@@ -23,8 +23,12 @@ References:
 import argparse
 import logging
 import sys
+import numpy as np
+import scipy.io
 
 from tempbeat import __version__
+from tempbeat.extraction.heartbeat_extraction import hb_extract
+from tempbeat.utils.timestamp import sampling_rate_to_sig_time
 
 __author__ = "danibene"
 __copyright__ = "danibene"
@@ -39,22 +43,31 @@ _logger = logging.getLogger(__name__)
 # `from tempbeat.skeleton import fib`,
 # when using this Python module as a library.
 
-
-def fib(n):
-    """Fibonacci example function
-
-    Args:
-      n (int): integer
-
-    Returns:
-      int: n-th Fibonacci number
+def extract_peak_times_from_wav(wav_file: str, method: str = "temp") -> np.ndarray:
     """
-    assert n > 0
-    a, b = 1, 1
-    for _i in range(n - 1):
-        a, b = b, a + b
-    return a
+    Extract peak times from a WAV file.
 
+    This function extracts the peak times from a WAV file using the specified method.
+
+    Parameters
+    ----------
+    wav_file : str
+        The path to the WAV file.
+    method : str, optional
+        The method used to extract the peak times. Default is "temp".
+
+    Returns
+    -------
+    np.ndarray
+        Array of timestamps corresponding to the peak times.
+    """
+    sampling_rate, sig = scipy.io.wavfile.read(wav_file)
+    sig_time = sampling_rate_to_sig_time(sig, sampling_rate)
+    peak_time = hb_extract(sig, sig_time=sig_time, sampling_rate=sampling_rate, method=method)
+    # export to csv
+    csv_file = str(wav_file).replace(".wav", "_peak_time.csv")
+    np.savetxt(csv_file, peak_time, delimiter=",")
+    print(f"Peak times saved to {csv_file}")
 
 # ---- CLI ----
 # The functions defined in this section are wrappers around the main Python
@@ -72,13 +85,13 @@ def parse_args(args):
     Returns:
       :obj:`argparse.Namespace`: command line parameters namespace
     """
-    parser = argparse.ArgumentParser(description="Just a Fibonacci demonstration")
+    parser = argparse.ArgumentParser(description="Just a demonstration")
     parser.add_argument(
         "--version",
         action="version",
         version=f"tempbeat {__version__}",
     )
-    parser.add_argument(dest="n", help="n-th Fibonacci number", type=int, metavar="INT")
+    parser.add_argument(dest="wav_file", help="The path to the WAV file.", type=str)
     parser.add_argument(
         "-v",
         "--verbose",
@@ -123,7 +136,7 @@ def main(args):
     args = parse_args(args)
     setup_logging(args.loglevel)
     _logger.debug("Starting crazy calculations...")
-    print(f"The {args.n}-th Fibonacci number is {fib(args.n)}")
+    extract_peak_times_from_wav(args.wav_file)
     _logger.info("Script ends here")
 
 
@@ -144,6 +157,6 @@ if __name__ == "__main__":
     # After installing your project with pip, users can also run your Python
     # modules as scripts via the ``-m`` flag, as defined in PEP 338::
     #
-    #     python -m tempbeat.skeleton 42
+    #     python -m tempbeat.skeleton "test.wav"
     #
     run()

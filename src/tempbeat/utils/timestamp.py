@@ -38,24 +38,44 @@ def samp_to_timestamp(
     - If a sample index is less than 0, it is changed to 0.
     - If a sample index is greater than the last index, it is changed to the last index.
     """
-    less_than_zero = np.where(samp < 0)
-    if np.any(less_than_zero):
-        warn(
-            "Warning: the sample index is less than 0. Changing the sample index to 0."
-        )
-        samp[less_than_zero] = 0
-
-    if sig_time is None:
-        timestamp = samp / sampling_rate - 1 / sampling_rate
-    else:
-        bigger_than_last_index = np.where(samp >= len(sig_time))
-        if np.any(bigger_than_last_index):
+    # Handle the case when samp is an ndarray
+    if isinstance(samp, np.ndarray):
+        less_than_zero = np.where(samp < 0)
+        if np.any(less_than_zero):
             warn(
-                """Warning: the sample index is greater than the last index.
-                Changing the sample index to the last index."""
+                "Warning: the sample index is less than 0. Changing the sample index to 0."
             )
-            samp[bigger_than_last_index] = len(sig_time) - 1
-        timestamp = sig_time[samp]
+            samp[less_than_zero] = 0
+
+        if sig_time is None:
+            timestamp = samp / sampling_rate - 1 / sampling_rate
+        else:
+            bigger_than_last_index = np.where(samp >= len(sig_time))
+            if np.any(bigger_than_last_index):
+                warn(
+                    "Warning: the sample index is greater than the last index. "
+                    "Changing the sample index to the last index."
+                )
+                samp[bigger_than_last_index] = len(sig_time) - 1
+            timestamp = sig_time[samp]
+    # Handle the case when samp is an int
+    else:
+        if samp < 0:
+            warn(
+                "Warning: the sample index is less than 0. Changing the sample index to 0."
+            )
+            samp = 0
+        elif sig_time is not None and samp >= len(sig_time):
+            warn(
+                "Warning: the sample index is greater than the last index. "
+                "Changing the sample index to the last index."
+            )
+            samp = len(sig_time) - 1
+
+        if sig_time is None:
+            timestamp = samp / sampling_rate - 1 / sampling_rate
+        else:
+            timestamp = sig_time[samp]
 
     return timestamp
 

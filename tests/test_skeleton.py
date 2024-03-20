@@ -5,7 +5,7 @@ import pytest
 import scipy
 from neurokit2 import data
 from neurokit2.signal import signal_distort
-from pytest import TempPathFactory
+from pytest import CaptureFixture, TempPathFactory
 
 from tempbeat.skeleton import extract_peak_times_from_wav, main
 
@@ -13,9 +13,10 @@ __author__ = "danibene"
 __copyright__ = "danibene"
 __license__ = "MIT"
 
+
 # PyTest fixture of wav file
 @pytest.fixture
-def wav_file(tmp_path_factory: TempPathFactory):
+def wav_file(tmp_path_factory: TempPathFactory) -> Path:
     """Create a temporary WAV file for testing"""
     sampling_rate = 100
     ecg_data = data("bio_resting_5min_100hz")
@@ -38,15 +39,16 @@ def wav_file(tmp_path_factory: TempPathFactory):
 
     return wav_path
 
-def test_extract_peak_times_from_wav(wav_file):
+
+def test_extract_peak_times_from_wav(wav_file: Path) -> None:
     """Test extract_peak_times_from_wav"""
-    peak_time = extract_peak_times_from_wav(wav_file, method="temp")
+    peak_time = extract_peak_times_from_wav(str(wav_file), method="temp")
     assert isinstance(peak_time, np.ndarray)
     assert len(peak_time) > 0
     assert isinstance(peak_time[0], float)
 
 
-def test_main(capsys, wav_file):
+def test_main(capsys: CaptureFixture, wav_file: Path) -> None:
     """CLI Tests"""
     # capsys is a pytest fixture that allows asserts against stdout/stderr
     # https://docs.pytest.org/en/stable/capture.html

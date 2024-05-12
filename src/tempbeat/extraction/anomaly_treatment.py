@@ -196,27 +196,27 @@ def remove_anomalies_from_corr_peaks(
     return peak_time_from_corr_height_filtered, peak_time_from_corr_rri_filtered
 
 
-def _get_added_kept_peak_time(
-    fixed_peak_time: np.ndarray = None,
-    original_kept_peak_time: np.ndarray = None,
+def _get_added_kept_peaks(
+    fixed_peaks: np.ndarray = None,
+    original_peaks: np.ndarray = None,
     dec: int = 1,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    added_peak_time = np.array(
+    added_peaks = np.array(
         [
             peak
-            for peak in fixed_peak_time
-            if np.round(peak, dec) not in np.round(original_kept_peak_time, dec)
+            for peak in fixed_peaks
+            if np.round(peak, dec) not in np.round(original_peaks, dec)
         ]
     )
-    kept_peak_time = np.array(
+    kept_peaks = np.array(
         [
             peak
-            for peak in fixed_peak_time
-            if np.round(peak, dec) in np.round(original_kept_peak_time, dec)
+            for peak in fixed_peaks
+            if np.round(peak, dec) in np.round(original_peaks, dec)
         ]
     )
 
-    return added_peak_time, kept_peak_time
+    return added_peaks, kept_peaks
 
 
 def fix_final_peaks(
@@ -293,14 +293,13 @@ def fix_final_peaks(
         n_nan_estimation_method=n_nan_estimation_method,
         interpolate_args=interpolate_args,
     )
-    fixed_new_peaks_time = samp_to_timestamp(fixed_new_peaks, sig_time=orig_sig_time)
-    added_peak_time, _ = _get_added_kept_peak_time(
-        fixed_peak_time=fixed_new_peaks_time,
-        original_kept_peak_time=peak_time_from_corr_rri_filtered,
+    added_peaks, kept_peaks = _get_added_kept_peaks(
+        fixed_peaks=fixed_new_peaks,
+        original_peaks=new_peaks,
     )
-    fixed_peak_time = np.sort(
-        np.concatenate((peak_time_from_corr_rri_filtered, added_peak_time))
-    )
+    added_peak_time = samp_to_timestamp(added_peaks, sig_time=orig_sig_time)
+    kept_peak_time = samp_to_timestamp(kept_peaks, sig_time=orig_sig_time)
+    fixed_peak_time = np.sort(np.concatenate((kept_peak_time, added_peak_time)))
     if fix_interpl_peaks_by_height:
         final_peak_time = fixpeaks_by_height(
             fixed_peak_time,
@@ -332,9 +331,7 @@ def fix_final_peaks(
             time_boundaries=fixpeaks_by_height_time_boundaries,
         )
         final_peak_time = np.sort(
-            np.concatenate(
-                (peak_time_from_corr_rri_filtered, height_fixed_added_peak_time)
-            )
+            np.concatenate((kept_peak_time, height_fixed_added_peak_time))
         )
     else:
         final_peak_time = fixed_peak_time

@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import scipy
 import soundfile as sf
@@ -37,283 +38,319 @@ def main() -> None:
     root_path = Path("Z:/Shared/Documents/RD/RD2/_AudioRD/datasets/Biosignals")
     datasets = ["P5M5_1", "P5M5_2", "P5M5_3"]
 
-    export_dir_root = Path("./output_2024-03-14")
-    mins = [6, 5, 4, 3, 2, 1, 0.5, 0.25]
-    # mins.reverse()
-    for minutes in mins:
-        export_dir = export_dir_root / str(minutes * 60)
+    export_dir_root_parent = Path("./output_2024-05-12")
+    args_dict = {
+        "original": {
+            "fix_interpl_peaks_by_height": False,
+            "max_time_after_last_peak": 5,
+        },
+        "ignoretimeafterlastpeak": {
+            "fix_interpl_peaks_by_height": True,
+            "max_time_after_last_peak": np.inf,
+        },
+        "heightfix": {
+            "fix_interpl_peaks_by_height": True,
+            "max_time_after_last_peak": 5,
+        },
+        "heightfixignoretimeafterlastpeak": {
+            "fix_interpl_peaks_by_height": True,
+            "max_time_after_last_peak": np.inf,
+        },
+    }
+    for key, args in args_dict.items():
+        export_dir_root = export_dir_root_parent / key
+        if not export_dir_root.exists():
+            export_dir_root.mkdir(parents=True)
+        mins = [6, 5, 4, 3, 2, 1, 0.5, 0.25]
+        # mins.reverse()
+        for minutes in mins:
+            export_dir = export_dir_root / str(minutes * 60)
 
-        if not export_dir.exists():
-            export_dir.mkdir(parents=True)
+            if not export_dir.exists():
+                export_dir.mkdir(parents=True)
 
-        fig_export_dir = export_dir / "figs"
+            fig_export_dir = export_dir / "figs"
 
-        if not fig_export_dir.exists():
-            fig_export_dir.mkdir(parents=True)
+            if not fig_export_dir.exists():
+                fig_export_dir.mkdir(parents=True)
 
-        rows_bpm_p = []
-        rows_bpm = []
-        rows_rri_p = []
-        rows_rri = []
+            rows_bpm_p = []
+            rows_bpm = []
+            rows_rri_p = []
+            rows_rri = []
 
-        row_peaks_list = []
-        for dataset in datasets:
-            dataset_path = root_path / dataset / "8k"
+            row_peaks_list = []
+            for dataset in datasets:
+                dataset_path = root_path / dataset / "8k"
 
-            participants = [
-                folder.name
-                for folder in dataset_path.iterdir()
-                if (folder.is_dir() & (folder.name[0] == "P"))
-            ]
+                participants = [
+                    folder.name
+                    for folder in dataset_path.iterdir()
+                    if (folder.is_dir() & (folder.name[0] == "P"))
+                ]
 
-            for p in participants:
-                for side in ["L", "R"]:
-                    try:
-                        iem_path = (
-                            dataset_path / p / "_unsegmented" / ("IEM_" + side + ".wav")
-                        )
-                        ecg_path = dataset_path / p / "_unsegmented" / "ECG_audio2.wav"
-
-                        if not ecg_path.is_file():
+                for p in participants:
+                    for side in ["L", "R"]:
+                        try:
+                            iem_path = (
+                                dataset_path
+                                / p
+                                / "_unsegmented"
+                                / ("IEM_" + side + ".wav")
+                            )
                             ecg_path = (
-                                dataset_path / p / "_unsegmented" / "ECG_audio.wav"
+                                dataset_path / p / "_unsegmented" / "ECG_audio2.wav"
                             )
-                        labels_path = (
-                            dataset_path / p / "_unsegmented" / "mrkrConditions.csv"
-                        )
 
-                        labels = pd.read_csv(labels_path)
+                            if not ecg_path.is_file():
+                                ecg_path = (
+                                    dataset_path / p / "_unsegmented" / "ECG_audio.wav"
+                                )
+                            labels_path = (
+                                dataset_path / p / "_unsegmented" / "mrkrConditions.csv"
+                            )
 
-                        labels_start = labels[labels["y"] == "00-fitTestNoise1-start"]
-                        start_time = labels_start.iloc[[-1]].t.values[0]
-                        # labels_stop = labels[labels['y'] == '03-noiseIels-stop']
-                        # stop_time = labels_stop.iloc[[-1]].t.values[0]
-                        stop_time = start_time + (minutes * 60)
+                            labels = pd.read_csv(labels_path)
 
-                        ecg_audio, sr = read_audio_section(
-                            ecg_path, start_time, stop_time
-                        )
-                        clean_peak_time = [
-                            i / sr for i, v in enumerate(ecg_audio) if v > 0.5
-                        ]
-                        iem_audio, sr = read_audio_section(
-                            iem_path, start_time, stop_time
-                        )
-                        audio_sig_time = sampling_rate_to_sig_time(
-                            iem_audio, sampling_rate=sr
-                        )
+                            labels_start = labels[
+                                labels["y"] == "00-fitTestNoise1-start"
+                            ]
+                            start_time = labels_start.iloc[[-1]].t.values[0]
+                            # labels_stop = labels[labels['y'] == '03-noiseIels-stop']
+                            # stop_time = labels_stop.iloc[[-1]].t.values[0]
+                            stop_time = start_time + (minutes * 60)
 
-                        new_sampling_rate = 1000
-                        div = sr / new_sampling_rate
-                        (
-                            resampled_clean_sig,
-                            resampled_clean_sig_time,
-                        ) = scipy.signal.resample(
-                            iem_audio, num=int(len(iem_audio) / div), t=audio_sig_time
-                        )
+                            ecg_audio, sr = read_audio_section(
+                                ecg_path, start_time, stop_time
+                            )
+                            clean_peak_time = [
+                                i / sr for i, v in enumerate(ecg_audio) if v > 0.5
+                            ]
+                            iem_audio, sr = read_audio_section(
+                                iem_path, start_time, stop_time
+                            )
+                            audio_sig_time = sampling_rate_to_sig_time(
+                                iem_audio, sampling_rate=sr
+                            )
 
-                        new_sampling_rate = 100
-                        div = 1000 / new_sampling_rate
-                        (
-                            resampled_clean_sig,
-                            resampled_clean_sig_time,
-                        ) = scipy.signal.resample(
-                            resampled_clean_sig,
-                            num=int(len(resampled_clean_sig) / div),
-                            t=resampled_clean_sig_time,
-                        )
-
-                        MAE_list_bpm_p = []
-                        MAE_list_bpm = []
-                        MAE_list_rri_p = []
-                        MAE_list_rri = []
-
-                        peaks_list = []
-                        hb_extract_methods = ["no_temp", "temp", "matlab"]
-                        for hb_extract_method in hb_extract_methods:
-                            if hb_extract_method == "temp":
-                                hb_extract_kwargs = {"output_format": "full"}
-                            else:
-                                hb_extract_kwargs = {}
-                            output = hb_extract(
+                            new_sampling_rate = 1000
+                            div = sr / new_sampling_rate
+                            (
                                 resampled_clean_sig,
-                                sig_time=resampled_clean_sig_time,
-                                sampling_rate=new_sampling_rate,
-                                method=hb_extract_method,
-                                hb_extract_algo_kwargs=hb_extract_kwargs,
-                            )
-                            if isinstance(output, tuple):
-                                audio_peak_time = output[0]
-                                # med_template = output[1]["med_template"]
-                            else:
-                                audio_peak_time = output
-
-                            mae_clean_distorted_bpm_p = get_bpm_mae_from_peak_time(
-                                peak_time_a=clean_peak_time,
-                                peak_time_b=audio_peak_time,
-                                unit="bpm",
-                                percentage=True,
+                                resampled_clean_sig_time,
+                            ) = scipy.signal.resample(
+                                iem_audio,
+                                num=int(len(iem_audio) / div),
+                                t=audio_sig_time,
                             )
 
-                            mae_clean_distorted_rri_p = get_bpm_mae_from_peak_time(
-                                peak_time_a=clean_peak_time,
-                                peak_time_b=audio_peak_time,
-                                unit="rri",
-                                percentage=True,
+                            new_sampling_rate = 100
+                            div = 1000 / new_sampling_rate
+                            (
+                                resampled_clean_sig,
+                                resampled_clean_sig_time,
+                            ) = scipy.signal.resample(
+                                resampled_clean_sig,
+                                num=int(len(resampled_clean_sig) / div),
+                                t=resampled_clean_sig_time,
                             )
 
-                            mae_clean_distorted_bpm = get_bpm_mae_from_peak_time(
-                                peak_time_a=clean_peak_time,
-                                peak_time_b=audio_peak_time,
-                                unit="bpm",
-                                percentage=False,
+                            MAE_list_bpm_p = []
+                            MAE_list_bpm = []
+                            MAE_list_rri_p = []
+                            MAE_list_rri = []
+
+                            peaks_list = []
+                            hb_extract_methods = ["no_temp", "temp", "matlab"]
+                            for hb_extract_method in hb_extract_methods:
+                                if hb_extract_method == "temp":
+                                    hb_extract_kwargs = args.copy()
+                                    hb_extract_kwargs["output_format"] = "full"
+                                elif hb_extract_method == "no_temp":
+                                    hb_extract_kwargs = args
+                                else:
+                                    hb_extract_kwargs = {}
+                                output = hb_extract(
+                                    resampled_clean_sig,
+                                    sig_time=resampled_clean_sig_time,
+                                    sampling_rate=new_sampling_rate,
+                                    method=hb_extract_method,
+                                    hb_extract_algo_kwargs=hb_extract_kwargs,
+                                )
+                                if isinstance(output, tuple):
+                                    audio_peak_time = output[0]
+                                    # med_template = output[1]["med_template"]
+                                else:
+                                    audio_peak_time = output
+
+                                mae_clean_distorted_bpm_p = get_bpm_mae_from_peak_time(
+                                    peak_time_a=clean_peak_time,
+                                    peak_time_b=audio_peak_time,
+                                    unit="bpm",
+                                    percentage=True,
+                                )
+
+                                mae_clean_distorted_rri_p = get_bpm_mae_from_peak_time(
+                                    peak_time_a=clean_peak_time,
+                                    peak_time_b=audio_peak_time,
+                                    unit="rri",
+                                    percentage=True,
+                                )
+
+                                mae_clean_distorted_bpm = get_bpm_mae_from_peak_time(
+                                    peak_time_a=clean_peak_time,
+                                    peak_time_b=audio_peak_time,
+                                    unit="bpm",
+                                    percentage=False,
+                                )
+
+                                mae_clean_distorted_rri = get_bpm_mae_from_peak_time(
+                                    peak_time_a=clean_peak_time,
+                                    peak_time_b=audio_peak_time,
+                                    unit="rri",
+                                    percentage=False,
+                                )
+
+                                peaks_list.append(audio_peak_time)
+
+                                # print(hb_extract_method)
+                                # print(mae_clean_distorted)
+                                MAE_list_bpm_p.append(mae_clean_distorted_bpm_p / 100)
+                                MAE_list_bpm.append(mae_clean_distorted_bpm)
+                                MAE_list_rri_p.append(mae_clean_distorted_rri_p / 100)
+                                MAE_list_rri.append(mae_clean_distorted_rri)
+
+                            min_bpm = 40
+                            max_bpm = 200
+                            min_rri = 60000 / max_bpm
+                            max_rri = 60000 / min_bpm
+                            rri_truth, rri_time_truth = peak_time_to_rri(
+                                clean_peak_time, min_rri=min_rri, max_rri=max_rri
                             )
 
-                            mae_clean_distorted_rri = get_bpm_mae_from_peak_time(
-                                peak_time_a=clean_peak_time,
-                                peak_time_b=audio_peak_time,
-                                unit="rri",
-                                percentage=False,
-                            )
+                            # for i in range(len(hb_extract_methods)):
+                            #     rri_a, rri_time_a = peak_time_to_rri(
+                            #         peaks_list[i], min_rri=min_rri, max_rri=max_rri
+                            #     )
 
-                            peaks_list.append(audio_peak_time)
+                            #     interp_x, interp_a, interp_truth = interpolate_to_same_x(
+                            #         a_x=rri_time_a,
+                            #         a_y=rri_a,
+                            #         b_x=rri_time_truth,
+                            #         b_y=rri_truth,
+                            #         interpolation_rate=interpolation_rate,
+                            #     )
+                            #     sns.lineplot(
+                            #         x=interp_x,
+                            #         y=interp_a,
+                            #         color=colors[i],
+                            #         label=hb_extract_methods[i],
+                            #     )
 
-                            # print(hb_extract_method)
-                            # print(mae_clean_distorted)
-                            MAE_list_bpm_p.append(mae_clean_distorted_bpm_p / 100)
-                            MAE_list_bpm.append(mae_clean_distorted_bpm)
-                            MAE_list_rri_p.append(mae_clean_distorted_rri_p / 100)
-                            MAE_list_rri.append(mae_clean_distorted_rri)
+                            # sns.lineplot(
+                            #     x=interp_x,
+                            #     y=interp_truth,
+                            #     color="green",
+                            #     label="Ground Truth",
+                            # )
 
-                        min_bpm = 40
-                        max_bpm = 200
-                        min_rri = 60000 / max_bpm
-                        max_rri = 60000 / min_bpm
-                        rri_truth, rri_time_truth = peak_time_to_rri(
-                            clean_peak_time, min_rri=min_rri, max_rri=max_rri
-                        )
+                            # # plt.title(f"{dataset} {p} {side}")
+                            # # plt.xlabel("Time")
+                            # # plt.ylabel("RRI")
+                            # # plt.legend()
 
-                        # for i in range(len(hb_extract_methods)):
-                        #     rri_a, rri_time_a = peak_time_to_rri(
-                        #         peaks_list[i], min_rri=min_rri, max_rri=max_rri
-                        #     )
+                            # # fn = f"{dataset}-{p}-{side}.png"
+                            # # plt.savefig(fig_export_dir / fn, bbox_inches="tight")
 
-                        #     interp_x, interp_a, interp_truth = interpolate_to_same_x(
-                        #         a_x=rri_time_a,
-                        #         a_y=rri_a,
-                        #         b_x=rri_time_truth,
-                        #         b_y=rri_truth,
-                        #         interpolation_rate=interpolation_rate,
-                        #     )
-                        #     sns.lineplot(
-                        #         x=interp_x,
-                        #         y=interp_a,
-                        #         color=colors[i],
-                        #         label=hb_extract_methods[i],
-                        #     )
+                            # # plt.show()
 
-                        # sns.lineplot(
-                        #     x=interp_x,
-                        #     y=interp_truth,
-                        #     color="green",
-                        #     label="Ground Truth",
-                        # )
+                            row_bpm_p = {
+                                "dataset": dataset,
+                                "participant": p,
+                                "side": side,
+                                "truth nbPeaks": len(clean_peak_time),
+                                "no_temp MAE": MAE_list_bpm_p[0],
+                                "no_temp nbPeaks": len(peaks_list[0]),
+                                "temp MAE": MAE_list_bpm_p[1],
+                                "temp nbPeaks": len(peaks_list[1]),
+                                "matlab MAE": MAE_list_bpm_p[2],
+                                "matlab nbPeaks": len(peaks_list[2]),
+                            }
 
-                        # # plt.title(f"{dataset} {p} {side}")
-                        # # plt.xlabel("Time")
-                        # # plt.ylabel("RRI")
-                        # # plt.legend()
+                            row_bpm = {
+                                "dataset": dataset,
+                                "participant": p,
+                                "side": side,
+                                "truth nbPeaks": len(clean_peak_time),
+                                "no_temp MAE": MAE_list_bpm[0],
+                                "no_temp nbPeaks": len(peaks_list[0]),
+                                "temp MAE": MAE_list_bpm[1],
+                                "temp nbPeaks": len(peaks_list[1]),
+                                "matlab MAE": MAE_list_bpm[2],
+                                "matlab nbPeaks": len(peaks_list[2]),
+                            }
 
-                        # # fn = f"{dataset}-{p}-{side}.png"
-                        # # plt.savefig(fig_export_dir / fn, bbox_inches="tight")
+                            row_rri_p = {
+                                "dataset": dataset,
+                                "participant": p,
+                                "side": side,
+                                "truth nbPeaks": len(clean_peak_time),
+                                "no_temp MAE": MAE_list_rri_p[0],
+                                "no_temp nbPeaks": len(peaks_list[0]),
+                                "temp MAE": MAE_list_rri_p[1],
+                                "temp nbPeaks": len(peaks_list[1]),
+                                "matlab MAE": MAE_list_rri_p[2],
+                                "matlab nbPeaks": len(peaks_list[2]),
+                            }
 
-                        # # plt.show()
+                            row_rri = {
+                                "dataset": dataset,
+                                "participant": p,
+                                "side": side,
+                                "truth nbPeaks": len(clean_peak_time),
+                                "no_temp MAE": MAE_list_rri[0],
+                                "no_temp nbPeaks": len(peaks_list[0]),
+                                "temp MAE": MAE_list_rri[1],
+                                "temp nbPeaks": len(peaks_list[1]),
+                                "matlab MAE": MAE_list_rri[2],
+                                "matlab nbPeaks": len(peaks_list[2]),
+                            }
 
-                        row_bpm_p = {
-                            "dataset": dataset,
-                            "participant": p,
-                            "side": side,
-                            "truth nbPeaks": len(clean_peak_time),
-                            "no_temp MAE": MAE_list_bpm_p[0],
-                            "no_temp nbPeaks": len(peaks_list[0]),
-                            "temp MAE": MAE_list_bpm_p[1],
-                            "temp nbPeaks": len(peaks_list[1]),
-                            "matlab MAE": MAE_list_bpm_p[2],
-                            "matlab nbPeaks": len(peaks_list[2]),
-                        }
+                            row_peaks = {
+                                "dataset": dataset,
+                                "participant": p,
+                                "side": side,
+                                "no_temp peaks": peaks_list[0],
+                                "temp peaks": peaks_list[1],
+                                "matlab peaks": peaks_list[2],
+                            }
 
-                        row_bpm = {
-                            "dataset": dataset,
-                            "participant": p,
-                            "side": side,
-                            "truth nbPeaks": len(clean_peak_time),
-                            "no_temp MAE": MAE_list_bpm[0],
-                            "no_temp nbPeaks": len(peaks_list[0]),
-                            "temp MAE": MAE_list_bpm[1],
-                            "temp nbPeaks": len(peaks_list[1]),
-                            "matlab MAE": MAE_list_bpm[2],
-                            "matlab nbPeaks": len(peaks_list[2]),
-                        }
+                            print(row_bpm)
+                            rows_bpm_p.append(row_bpm_p)
+                            rows_bpm.append(row_bpm)
+                            rows_rri_p.append(row_rri_p)
+                            rows_rri.append(row_rri)
+                            row_peaks_list.append(row_peaks)
 
-                        row_rri_p = {
-                            "dataset": dataset,
-                            "participant": p,
-                            "side": side,
-                            "truth nbPeaks": len(clean_peak_time),
-                            "no_temp MAE": MAE_list_rri_p[0],
-                            "no_temp nbPeaks": len(peaks_list[0]),
-                            "temp MAE": MAE_list_rri_p[1],
-                            "temp nbPeaks": len(peaks_list[1]),
-                            "matlab MAE": MAE_list_rri_p[2],
-                            "matlab nbPeaks": len(peaks_list[2]),
-                        }
+                        except Exception as e:
+                            print(f"{dataset} - {p} - {side} \nAn error occurred: {e}")
 
-                        row_rri = {
-                            "dataset": dataset,
-                            "participant": p,
-                            "side": side,
-                            "truth nbPeaks": len(clean_peak_time),
-                            "no_temp MAE": MAE_list_rri[0],
-                            "no_temp nbPeaks": len(peaks_list[0]),
-                            "temp MAE": MAE_list_rri[1],
-                            "temp nbPeaks": len(peaks_list[1]),
-                            "matlab MAE": MAE_list_rri[2],
-                            "matlab nbPeaks": len(peaks_list[2]),
-                        }
+            df_final = pd.DataFrame(rows_bpm_p)
+            df_final.to_csv(export_dir / f"results_bpm_p_{minutes*60}.csv", index=False)
 
-                        row_peaks = {
-                            "dataset": dataset,
-                            "participant": p,
-                            "side": side,
-                            "no_temp peaks": peaks_list[0],
-                            "temp peaks": peaks_list[1],
-                            "matlab peaks": peaks_list[2],
-                        }
+            df_final = pd.DataFrame(rows_bpm)
+            df_final.to_csv(export_dir / f"results_bpm_{minutes*60}.csv", index=False)
 
-                        print(row_bpm)
-                        rows_bpm_p.append(row_bpm_p)
-                        rows_bpm.append(row_bpm)
-                        rows_rri_p.append(row_rri_p)
-                        rows_rri.append(row_rri)
-                        row_peaks_list.append(row_peaks)
+            df_final = pd.DataFrame(rows_rri_p)
+            df_final.to_csv(export_dir / f"results_rri_p_{minutes*60}.csv", index=False)
 
-                    except Exception as e:
-                        print(f"{dataset} - {p} - {side} \nAn error occurred: {e}")
+            df_final = pd.DataFrame(rows_rri)
+            df_final.to_csv(export_dir / f"results_rri_{minutes*60}.csv", index=False)
 
-        df_final = pd.DataFrame(rows_bpm_p)
-        df_final.to_csv(export_dir / f"results_bpm_p_{minutes*60}.csv", index=False)
-
-        df_final = pd.DataFrame(rows_bpm)
-        df_final.to_csv(export_dir / f"results_bpm_{minutes*60}.csv", index=False)
-
-        df_final = pd.DataFrame(rows_rri_p)
-        df_final.to_csv(export_dir / f"results_rri_p_{minutes*60}.csv", index=False)
-
-        df_final = pd.DataFrame(rows_rri)
-        df_final.to_csv(export_dir / f"results_rri_{minutes*60}.csv", index=False)
-
-        df_peaks = pd.DataFrame(row_peaks_list)
-        df_peaks.to_json(export_dir / f"peak_output_{minutes*60}.json", orient="index")
+            df_peaks = pd.DataFrame(row_peaks_list)
+            df_peaks.to_json(
+                export_dir / f"peak_output_{minutes*60}.json", orient="index"
+            )
 
     quit_matlab()
 

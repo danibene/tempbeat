@@ -85,6 +85,7 @@ def main() -> None:
     # Extract the heartbeats
     hb_extract_kwargs = {
         "fix_interpl_peaks_by_height": True,
+        "max_time_after_last_peak": np.inf,
         "output_format": "full",
     }
 

@@ -57,9 +57,13 @@ MANIFEST
 *.asv
 *.m
 
-#Outputs
+# Outputs
 *.json
 *.png
 *.csv
 *.xlsx
 data/*
+
+# Numba files
+*.nbc
+*.nbi

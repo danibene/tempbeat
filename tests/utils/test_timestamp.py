@@ -247,7 +247,7 @@ class TestSamplingRateToSigTime:
         """
         sampling_rate = 1000
         sig = np.array([1, 2, 3])
-        sig_time = sampling_rate_to_sig_time(sig, sampling_rate=1000)
+        sig_time = sampling_rate_to_sig_time(sig, sampling_rate=1000, start_time=0)
         assert np.all(np.diff(sig_time) == 1 / sampling_rate)
 
 

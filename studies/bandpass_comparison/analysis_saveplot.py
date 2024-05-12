@@ -2,18 +2,18 @@
 
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import scipy
-import soundfile as sf
 import seaborn as sns
-import matplotlib.pyplot as plt
+import soundfile as sf
 
 from tempbeat.evaluation.compare_bpm import get_bpm_mae_from_peak_time
 from tempbeat.extraction.heartbeat_extraction import hb_extract
 from tempbeat.extraction.interval_conversion import peak_time_to_rri
+from tempbeat.utils.interpolation import interpolate_to_same_x
 from tempbeat.utils.matlab_utils import quit_matlab, set_matlab
 from tempbeat.utils.timestamp import sampling_rate_to_sig_time
-from tempbeat.utils.interpolation import interpolate_to_same_x
 
 
 def read_audio_section(filename, start_time, stop_time):
@@ -105,7 +105,7 @@ def main() -> None:
                             iem_path, start_time, stop_time
                         )
                         audio_sig_time = sampling_rate_to_sig_time(
-                            iem_audio, sampling_rate=sr
+                            iem_audio, sampling_rate=sr, start_time=0
                         )
 
                         new_sampling_rate = 1000
@@ -135,7 +135,11 @@ def main() -> None:
 
                         peaks_list = []
                         colors = ["red", "blue", "orange"]
-                        hb_extract_methods_names = ["Proposed without Template", "Proposed with Template", "Martin et al."]
+                        hb_extract_methods_names = [
+                            "Proposed without Template",
+                            "Proposed with Template",
+                            "Martin et al.",
+                        ]
                         hb_extract_methods = ["no_temp", "temp", "matlab"]
                         for hb_extract_method in hb_extract_methods:
                             if hb_extract_method == "temp":
@@ -191,7 +195,7 @@ def main() -> None:
                             MAE_list_bpm.append(mae_clean_distorted_bpm)
                             MAE_list_rri_p.append(mae_clean_distorted_rri_p / 100)
                             MAE_list_rri.append(mae_clean_distorted_rri)
-                        
+
                         interpolation_rate = 2
                         min_bpm = 40
                         max_bpm = 200
@@ -200,7 +204,7 @@ def main() -> None:
                         rri_truth, rri_time_truth = peak_time_to_rri(
                             clean_peak_time, min_rri=min_rri, max_rri=max_rri
                         )
-                        
+
                         fig = plt.figure(figsize=(6, 8))
 
                         for i in range(len(hb_extract_methods)):
@@ -215,24 +219,19 @@ def main() -> None:
                                 b_y=rri_truth,
                                 interpolation_rate=interpolation_rate,
                             )
-                            
-                            fig.add_subplot(3,1,i+1)
-                            sns.lineplot(
-                                x=interp_x,
-                                y=interp_a,
-                                color=colors[i]
-                            )
+
+                            fig.add_subplot(3, 1, i + 1)
+                            sns.lineplot(x=interp_x, y=interp_a, color=colors[i])
 
                             sns.lineplot(
                                 x=interp_x,
                                 y=interp_truth,
                                 color="green",
                             )
-                            
+
                             plt.title(hb_extract_methods_names[i])
                             plt.ylabel("RRI")
 
-   
                         plt.xlabel("Time")
                         fig.tight_layout()
                         fn = f"{dataset}-{p}-{side}.pdf"

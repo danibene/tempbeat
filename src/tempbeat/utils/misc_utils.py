@@ -5,7 +5,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from warnings import warn
 
 import numpy as np
-from numba import njit
 
 
 def get_func_kwargs(
@@ -374,58 +373,3 @@ def export_debug_info(
         )
         write_dict_to_json(debug_out, json_path=this_debug_out_path)
         return final_output
-
-
-@njit(cache=True)
-def unique_with_counts(array: np.ndarray) -> tuple:
-    """
-    Calculate the unique values in an array and their counts.
-
-    Parameters
-    ----------
-    array : np.ndarray
-        The input array.
-
-    Returns
-    -------
-    tuple
-        A tuple of two arrays: the unique values and their counts.
-    """
-    unique = np.unique(array)
-    counts = np.zeros(unique.shape, dtype=np.int64)
-    for value in unique:
-        counts[np.where(unique == value)] = np.sum(array == value)
-    return unique, counts
-
-
-@njit(cache=True)
-def print_warning(message: str) -> None:
-    """
-    Print a warning message to the console.
-
-    Parameters
-    ----------
-    message : str
-        The warning message to print.
-    """
-    print(f"Warning: {message}")
-
-
-@njit(cache=True)
-def mode(array: np.ndarray) -> float:
-    """
-    Calculate the mode of a numpy array.
-
-    Parameters
-    ----------
-    array : np.ndarray
-        The input array.
-
-    Returns
-    -------
-    float
-        The mode of the array.
-    """
-    unique, counts = unique_with_counts(array)
-    index = np.argmax(counts)
-    return unique[index]

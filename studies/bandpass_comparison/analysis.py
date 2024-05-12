@@ -100,7 +100,7 @@ def main() -> None:
                             iem_path, start_time, stop_time
                         )
                         audio_sig_time = sampling_rate_to_sig_time(
-                            iem_audio, sampling_rate=sr, start_time=0
+                            iem_audio, sampling_rate=sr
                         )
 
                         new_sampling_rate = 1000

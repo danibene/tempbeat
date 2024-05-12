@@ -23,7 +23,7 @@ class TestTempHbExtract:
         sampling_rate = 200
         data = nk.data("bio_resting_8min_200hz")
         sig = data["S01"]["ECG"]
-        sig_time = sampling_rate_to_sig_time(sig, sampling_rate, start_time=0)
+        sig_time = sampling_rate_to_sig_time(sig, sampling_rate)
         peaks = temp_hb_extract(sig, sig_time=sig_time, sampling_rate=sampling_rate)
 
         np.testing.assert_allclose(
@@ -69,7 +69,7 @@ class TestHbExtract:
         sampling_rate = 100
         data = nk.data("bio_resting_5min_100hz")
         sig = data["ECG"]
-        sig_time = sampling_rate_to_sig_time(sig, sampling_rate, start_time=0)
+        sig_time = sampling_rate_to_sig_time(sig, sampling_rate)
         peak_time = hb_extract(
             sig, sig_time=sig_time, sampling_rate=sampling_rate, method=method
         )
@@ -89,7 +89,7 @@ class TestHbExtract:
         sampling_rate = 100
         data = nk.data("bio_resting_5min_100hz")
         sig = data["ECG"]
-        sig_time = sampling_rate_to_sig_time(sig, sampling_rate, start_time=0)
+        sig_time = sampling_rate_to_sig_time(sig, sampling_rate)
         output = hb_extract(
             sig,
             sig_time=sig_time,
@@ -111,7 +111,7 @@ class TestHbExtract:
         sampling_rate = 100
         data = nk.data("bio_resting_5min_100hz")
         sig = data["ECG"]
-        sig_time = sampling_rate_to_sig_time(sig, sampling_rate, start_time=0)
+        sig_time = sampling_rate_to_sig_time(sig, sampling_rate)
         output = hb_extract(
             sig,
             sig_time=sig_time,

@@ -82,9 +82,10 @@ def main() -> None:
                     # stop_time = labels_stop.iloc[[-1]].t.values[0]
                     stop_time = start_time + (minutes * 60)
 
+                    ecg_audio, sr = read_audio_section(ecg_path, start_time, stop_time)
                     iem_audio, sr = read_audio_section(iem_path, start_time, stop_time)
                     audio_sig_time = sampling_rate_to_sig_time(
-                        iem_audio, sampling_rate=sr, start_time=0
+                        iem_audio, sampling_rate=sr
                     )
 
                     new_sampling_rate = 1000
@@ -128,7 +129,7 @@ def main() -> None:
                         if isinstance(output, tuple):
                             med_template = output[1]["med_template"]
 
-                        plt.plot(med_template)
+                    plt.plot(med_template)
                     plt.legend((np.array(mins) * 60).astype(int))
 
                     plt.xlabel("Samples")

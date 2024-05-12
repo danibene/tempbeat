@@ -629,9 +629,7 @@ def hb_extract(
     if hb_extract_algo_kwargs is None:
         hb_extract_algo_kwargs = {}
     if sig_time is None:
-        sig_time = sampling_rate_to_sig_time(
-            sig=sig, sampling_rate=sampling_rate, start_time=0
-        )
+        sig_time = sampling_rate_to_sig_time(sig=sig, sampling_rate=sampling_rate)
     else:
         sampling_rate = sig_time_to_sampling_rate(sig_time=sig_time)
     sig, sig_time = drop_missing(sig, sig_time=sig_time)

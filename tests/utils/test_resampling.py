@@ -44,9 +44,7 @@ class TestResampleNonuniform:
         )
         sig = sig_freq15 + sig_freq50
         assert sig.shape[0] == duration * sampling_rate
-        sig_time = sampling_rate_to_sig_time(
-            sig, sampling_rate=sampling_rate, start_time=0
-        )
+        sig_time = sampling_rate_to_sig_time(sig, sampling_rate=sampling_rate)
         return sig, sig_time
 
     def get_test_signal_nonuniform(self) -> Tuple[np.ndarray, np.ndarray]:

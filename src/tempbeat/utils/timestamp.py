@@ -2,9 +2,7 @@ from typing import List, Optional, Union
 from warnings import warn
 
 import numpy as np
-from numba import njit
-
-from .misc_utils import mode, print_warning
+import scipy
 
 
 def samp_to_timestamp(
@@ -136,7 +134,6 @@ def timestamp_to_samp(
     return samp
 
 
-@njit(cache=True)
 def check_uniform_sig_time(
     sig_time: Union[np.ndarray, list], decimals: int = 6
 ) -> bool:
@@ -161,7 +158,6 @@ def check_uniform_sig_time(
     return len(np.unique(np.round(np.diff(sig_time), decimals=decimals))) == 1
 
 
-@njit(cache=True)
 def sig_time_to_sampling_rate(
     sig_time: Union[np.ndarray, List[float]],
     method: str = "median",
@@ -205,21 +201,20 @@ def sig_time_to_sampling_rate(
     """
     if check_uniform:
         if not check_uniform_sig_time(sig_time, decimals=decimals):
-            print_warning("Warning: the difference between timepoints is not uniform")
+            warn("Warning: the difference between timepoints is not uniform")
 
     if method == "mode":
-        sampling_rate = int(1 / mode(np.diff(sig_time)))
+        sampling_rate = int(1 / scipy.stats.mode(np.diff(sig_time)).mode)
     else:
         sampling_rate = int(1 / np.median(np.diff(sig_time)))
 
     return sampling_rate
 
 
-@njit(cache=True)
 def sampling_rate_to_sig_time(
-    sig: np.ndarray,
-    sampling_rate: int,
-    start_time: float,
+    sig: Union[np.ndarray, List[float]],
+    sampling_rate: int = 1000,
+    start_time: float = 0,
 ) -> np.ndarray:
     """
     Convert sampling rate to signal time array.

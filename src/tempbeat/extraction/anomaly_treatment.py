@@ -296,8 +296,13 @@ def fix_final_peaks(
     fixed_peak_time = samp_to_timestamp(fixed_new_peaks, sig_time=orig_sig_time)
     if fix_interpl_peaks_by_height:
         final_peak_time = fixpeaks_by_height(
-            samp_to_timestamp(fixed_new_peaks, sig_time=orig_sig_time),
+            fixed_peak_time,
             sig_info={
+                "time": orig_sig_time,
+                "sig": orig_sig,
+                "sampling_rate": orig_sampling_rate,
+            },
+            clean_sig_info={
                 "time": corr_times,
                 "sig": corrs,
                 "sampling_rate": sampling_rate,

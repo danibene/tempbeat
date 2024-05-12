@@ -84,7 +84,7 @@ def main() -> None:
 
     # Extract the heartbeats
     hb_extract_kwargs = {
-        "fix_added_interpl_peaks_by_height": True,
+        "fix_interpl_peaks_by_height": True,
         "output_format": "full",
     }
 

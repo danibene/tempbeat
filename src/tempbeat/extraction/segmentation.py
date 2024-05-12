@@ -96,8 +96,10 @@ def find_local_hb_peaks(
         Array of timestamps corresponding to the corrected peak times.
     """
     if sig_time is None:
-        sig_time = sampling_rate_to_sig_time(sig=sig, sampling_rate=sampling_rate)
-    else:
+        sig_time = sampling_rate_to_sig_time(
+            sig=sig, sampling_rate=sampling_rate, start_time=0
+        )
+    elif sampling_rate is None:
         sampling_rate = sig_time_to_sampling_rate(sig_time=sig_time)
 
     new_peak_time = []

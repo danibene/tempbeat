@@ -67,7 +67,7 @@ def main() -> None:
             "output_format": "full",
         },
         "ignoretimeafterlastpeak": {
-            "fix_interpl_peaks_by_height": True,
+            "fix_interpl_peaks_by_height": False,
             "max_time_after_last_peak": np.inf,
             "output_format": "full",
         },

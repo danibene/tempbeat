@@ -45,7 +45,7 @@ def main() -> None:
             "max_time_after_last_peak": 5,
         },
         "ignoretimeafterlastpeak": {
-            "fix_interpl_peaks_by_height": True,
+            "fix_interpl_peaks_by_height": False,
             "max_time_after_last_peak": np.inf,
         },
         "heightfix": {

@@ -96,29 +96,30 @@ def find_local_hb_peaks(
         Array of timestamps corresponding to the corrected peak times.
     """
     if sig_time is None:
-        sig_time = sampling_rate_to_sig_time(sig=sig, sampling_rate=sampling_rate)
-    else:
+        sig_time = sampling_rate_to_sig_time(
+            sig=sig, sampling_rate=sampling_rate, start_time=0
+        )
+    elif sampling_rate is None:
         sampling_rate = sig_time_to_sampling_rate(sig_time=sig_time)
 
     new_peak_time = []
 
+    func_kwargs = get_func_kwargs(get_local_hb_sig, **kwargs)
+
     if check_height_outlier:
         peak_height = sig[timestamp_to_samp(peak_time, sampling_rate, sig_time)]
+    else:
+        if use_prominence:
+            local_peaks, _ = scipy.signal.find_peaks(sig)
+            prominences = scipy.signal.peak_prominences(sig, local_peaks)[0]
 
     for peak in peak_time:
         hb_sig, hb_sig_time = get_local_hb_sig(
-            peak,
-            sig=sig,
-            sig_time=sig_time,
-            sampling_rate=sampling_rate,
-            **get_func_kwargs(get_local_hb_sig, **kwargs)
+            peak, sig=sig, sig_time=sig_time, sampling_rate=sampling_rate, **func_kwargs
         )
 
         if check_height_outlier:
-            if k_sample_ratio == 0:
-                k = 1
-            else:
-                k = int(k_sample_ratio * len(hb_sig))
+            k = max(1, int(k_sample_ratio * len(hb_sig)))
 
             if use_prominence:
                 local_peaks, _ = scipy.signal.find_peaks(hb_sig)
@@ -134,19 +135,13 @@ def find_local_hb_peaks(
             while peak_is_outlier and i < len(potential_peaks_index):
                 current_peak_index = potential_peaks_index[i]
                 current_peak_height = hb_sig[current_peak_index]
-                peak_height_with_current = peak_height.copy()
                 peak_height_with_current = np.insert(
-                    peak_height_with_current, 0, current_peak_height
+                    peak_height, 0, current_peak_height
                 )
 
-                # Having a fit and predict class like sklearn estimator
-                # would probably make this faster
                 peak_is_outlier = nk.find_outliers(peak_height_with_current)[0]
                 i += 1
 
-                # Alternatively instead of iterating through can make
-                # sure that there are no two candidate peaks that are
-                # spaced apart far enough to be S1 and S2
             if np.isnan(current_peak_index) or peak_is_outlier:
                 new_peak = peak
             else:
@@ -154,8 +149,6 @@ def find_local_hb_peaks(
         else:
             if len(hb_sig) > 1:
                 if use_prominence:
-                    local_peaks, _ = scipy.signal.find_peaks(hb_sig)
-                    prominences = scipy.signal.peak_prominences(hb_sig, local_peaks)[0]
                     new_peak = hb_sig_time[local_peaks[np.argmax(prominences)]]
                 else:
                     new_peak = hb_sig_time[np.argmax(hb_sig)]
@@ -164,5 +157,4 @@ def find_local_hb_peaks(
 
         new_peak_time.append(new_peak)
 
-    new_peak_time = np.array(new_peak_time)
-    return new_peak_time
+    return np.array(new_peak_time)

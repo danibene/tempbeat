@@ -2,18 +2,14 @@
 
 from pathlib import Path
 
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import scipy
 import soundfile as sf
-import seaborn as sns
-import matplotlib.pyplot as plt
 
-from tempbeat.evaluation.compare_bpm import get_bpm_mae_from_peak_time
 from tempbeat.extraction.heartbeat_extraction import hb_extract
-from tempbeat.extraction.interval_conversion import peak_time_to_rri
-from tempbeat.utils.matlab_utils import quit_matlab, set_matlab
 from tempbeat.utils.timestamp import sampling_rate_to_sig_time
-from tempbeat.utils.interpolation import interpolate_to_same_x
 
 
 def read_audio_section(filename, start_time, stop_time):
@@ -42,7 +38,7 @@ def main() -> None:
     # datasets = ["P5M5_2"]
 
     export_dir_root = Path("./output_2024-04-09")
-    mins = [5, 3,  1, 0.5, 0.25]
+    mins = [5, 3, 1, 0.5, 0.25]
     mins.reverse()
     minutes = 5
     export_dir = export_dir_root / str(minutes * 60)
@@ -55,12 +51,6 @@ def main() -> None:
     if not fig_export_dir.exists():
         fig_export_dir.mkdir(parents=True)
 
-    rows_bpm_p = []
-    rows_bpm = []
-    rows_rri_p = []
-    rows_rri = []
-
-    row_peaks_list = []
     for dataset in datasets:
         dataset_path = root_path / dataset / "8k"
 
@@ -79,9 +69,7 @@ def main() -> None:
                     ecg_path = dataset_path / p / "_unsegmented" / "ECG_audio2.wav"
 
                     if not ecg_path.is_file():
-                        ecg_path = (
-                            dataset_path / p / "_unsegmented" / "ECG_audio.wav"
-                        )
+                        ecg_path = dataset_path / p / "_unsegmented" / "ECG_audio.wav"
                     labels_path = (
                         dataset_path / p / "_unsegmented" / "mrkrConditions.csv"
                     )
@@ -94,15 +82,8 @@ def main() -> None:
                     # stop_time = labels_stop.iloc[[-1]].t.values[0]
                     stop_time = start_time + (minutes * 60)
 
-                    ecg_audio, sr = read_audio_section(
-                        ecg_path, start_time, stop_time
-                    )
-                    clean_peak_time = [
-                        i / sr for i, v in enumerate(ecg_audio) if v > 0.5
-                    ]
-                    iem_audio, sr = read_audio_section(
-                        iem_path, start_time, stop_time
-                    )
+                    ecg_audio, sr = read_audio_section(ecg_path, start_time, stop_time)
+                    iem_audio, sr = read_audio_section(iem_path, start_time, stop_time)
                     audio_sig_time = sampling_rate_to_sig_time(
                         iem_audio, sampling_rate=sr
                     )
@@ -127,7 +108,7 @@ def main() -> None:
                         t=resampled_clean_sig_time,
                     )
 
-                    fig = plt.figure()        
+                    fig = plt.figure()
                     hb_extract_method = "temp"
                     for minutes in mins:
                         if hb_extract_method == "temp":
@@ -135,34 +116,30 @@ def main() -> None:
                         else:
                             hb_extract_kwargs = {}
                         output = hb_extract(
-                            resampled_clean_sig[0:int(minutes*60*new_sampling_rate)],
-                            sig_time=resampled_clean_sig_time[0:int(minutes*60*new_sampling_rate)],
+                            resampled_clean_sig[
+                                0 : int(minutes * 60 * new_sampling_rate)
+                            ],
+                            sig_time=resampled_clean_sig_time[
+                                0 : int(minutes * 60 * new_sampling_rate)
+                            ],
                             sampling_rate=new_sampling_rate,
                             method=hb_extract_method,
                             hb_extract_algo_kwargs=hb_extract_kwargs,
                         )
                         if isinstance(output, tuple):
-                            audio_peak_time = output[0]
                             med_template = output[1]["med_template"]
-                        else:
-                            audio_peak_time = output
 
-                    
-                    
-                        plt.plot(med_template)
-                    plt.legend((np.array(mins)*60).astype(int))
-                        
+                    plt.plot(med_template)
+                    plt.legend((np.array(mins) * 60).astype(int))
+
                     plt.xlabel("Samples")
                     fig.tight_layout()
                     fn = f"{dataset}-{p}-{side}--Template.pdf"
                     plt.savefig(fig_export_dir / fn, bbox_inches="tight")
                     plt.show()
-                    
-
 
                 except Exception as e:
                     print(f"{dataset} - {p} - {side} \nAn error occurred: {e}")
-
 
     # quit_matlab()
 

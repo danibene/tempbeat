@@ -34,7 +34,7 @@ tempbeat
 ========
 
 
-    Template-based in-ear heartbeat extraction
+    Template-based interbeat interval extraction
 
 
 Introduction

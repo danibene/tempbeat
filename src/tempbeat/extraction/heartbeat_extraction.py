@@ -523,6 +523,10 @@ def _temp_hb_extract_extract_potential_peaks_from_correlation(
         _, processed_info = nk.ecg_peaks(
             corrs, method="nabian2018", sampling_rate=sampling_rate
         )
+    elif corr_peak_extraction_method == "nk_ecg_peaks_neurokit":
+        _, processed_info = nk.ecg_peaks(
+            corrs, method="neurokit", sampling_rate=sampling_rate
+        )
     elif corr_peak_extraction_method == "nk_ecg_process_kalidas2017":
         _, processed_info = nk.ecg_process(
             corrs, sampling_rate=sampling_rate, method="kalidas2017"

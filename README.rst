@@ -80,6 +80,7 @@ It is a good idea to update the hooks to the latest version::
 
     pre-commit autoupdate
 
+.. _pre-commit: https://pre-commit.com/
 
 Note
 ====

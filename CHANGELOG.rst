@@ -9,6 +9,15 @@ Unreleased
 
 Please see all `Unreleased Changes`_ for more information.
 
+0.0.3 - 2024-08-01
+--------------------
+
+Fixed
+~~~~~
+
+- Hyperlink in README
+
+
 0.0.2 - 2024-08-01
 --------------------
 

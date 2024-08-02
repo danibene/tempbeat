@@ -9,6 +9,21 @@ Unreleased
 
 Please see all `Unreleased Changes`_ for more information.
 
+0.0.2 - 2024-08-01
+--------------------
+
+Added
+~~~~~
+
+- Add optional percentage parameter in calculation of MAE
+- Add multiple parameters and plots of median template and correlation to bandpass_comparison study
+
+Removed
+~~~~~
+
+- Remove parts of mod_fixpeaks that are not currently used in the template algorithm
+
+
 0.0.1 - 2024-03-19
 --------------------
 

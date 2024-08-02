@@ -37,6 +37,13 @@ tempbeat
     Template-based in-ear heartbeat extraction
 
 
+Introduction
+============
+This is a Python package for extracting interbeat intervals from various heartbeat signals. It includes a template-based method developed for in-ear heartbeat sounds, which has also been tested for electrocardiography and photoplethysmography signals. The tests on in-ear heartbeat sounds are described in the following paper:
+
+    Benesch, D., Chabot, P., Tom, A., Voix, J., & Bouserhal, R. E. (2024). Template-based Extraction of Interbeat Intervals from In-Ear Heartbeat Sounds. IEEE International Conference on Wearable and Implantable Body Sensor Networks (BSN 2024).
+
+
 Usage
 ==========
 .. code-block:: python
@@ -73,9 +80,6 @@ It is a good idea to update the hooks to the latest version::
 
     pre-commit autoupdate
 
-Don't forget to tell your contributors to also install and use pre-commit.
-
-.. _pre-commit: https://pre-commit.com/
 
 Note
 ====

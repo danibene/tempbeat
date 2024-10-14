@@ -42,6 +42,18 @@ This is a Python package for extracting interbeat intervals from various heartbe
     Benesch, D., Chabot, P., Tom, A., Voix, J., & Bouserhal, R. E. (2024). Template-based Extraction of Interbeat Intervals from In-Ear Heartbeat Sounds. IEEE International Conference on Wearable and Implantable Body Sensor Networks (BSN 2024).
 
 
+Installation
+============
+You can install the package via pip::
+
+    pip install tempbeat
+
+Or you can install the package from the source code::
+
+        git clone https://github.com/danibene/tempbeat.git
+        cd tempbeat
+        pip install -e .
+
 Usage
 ==========
 .. code-block:: python
